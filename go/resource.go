@@ -6,6 +6,8 @@ import (
 
 	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/kubernetes"
+
+	resourcePb "github.com/michaelhenkel/k8s-client-cpp/resourcepb"
 )
 
 // #include <stdint.h>
@@ -21,6 +23,7 @@ func k8s_client_contrail_get_group_resources(clientsetKey C.uintptr_t, ns *C.cha
 	}
 	for _, apiResource := range apiResourceList {
 		if apiResource.GroupVersion == "core.contrail.juniper.net/v1alpha1" {
+			resourcePb.ApiResource{}
 			resultProto, _ := apiResource.Marshal()
 			*oBytes = C.CBytes(resultProto)
 			*oSize = C.int(len(resultProto))

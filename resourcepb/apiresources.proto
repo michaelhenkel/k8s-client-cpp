@@ -1,0 +1,10 @@
+syntax = "proto3";
+package resourcepb;
+
+//import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/michaelhenkel/k8s-client-cpp/resourcepb";
+
+message ApiResource {
+    repeated string name = 1;
+}
