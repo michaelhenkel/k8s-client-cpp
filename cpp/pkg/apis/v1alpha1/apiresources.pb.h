@@ -661,7 +661,7 @@ class Resource final :
   enum : int {
     kResourceFieldNumber = 1,
   };
-  // string resource = 1;
+  // bytes resource = 1;
   void clear_resource();
   const std::string& resource() const;
   template <typename ArgT0 = const std::string&, typename... ArgT>
@@ -901,7 +901,7 @@ Resources::resources() const {
 
 // Resource
 
-// string resource = 1;
+// bytes resource = 1;
 inline void Resource::clear_resource() {
   resource_.ClearToEmpty();
 }
@@ -913,7 +913,7 @@ template <typename ArgT0, typename... ArgT>
 inline PROTOBUF_ALWAYS_INLINE
 void Resource::set_resource(ArgT0&& arg0, ArgT... args) {
  
- resource_.Set(::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::EmptyDefault{}, static_cast<ArgT0 &&>(arg0), args..., GetArenaForAllocation());
+ resource_.SetBytes(::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::EmptyDefault{}, static_cast<ArgT0 &&>(arg0), args..., GetArenaForAllocation());
   // @@protoc_insertion_point(field_set:v1alpha1.Resource.resource)
 }
 inline std::string* Resource::mutable_resource() {

@@ -58,18 +58,20 @@ int main()
 	}
 
 	auto virtualNetworkWatchH = contrailClientSet.contrail().Watch(metav1::ListOptions(), [](int watchType, const v1alpha1::Resource* resource){
-		printf("resource: %s\n", resource->resource().c_str());
-/*
+		//printf("resource: %s\n", resource->resource().c_str());
+
 		Document d;
 		d.Parse(resource->resource().c_str());
+
 		assert(d.IsObject());
 		assert(d.HasMember("metadata"));
+
     	assert(d["metadata"].IsObject());
 		Value::MemberIterator md = d.FindMember("metadata");
 		assert(md->value.HasMember("name"));
 		Value::MemberIterator md_name = md->value.FindMember("name");
 		printf("watchType: %d, name: %s\n", watchType, md_name->value.GetString());
-*/	
+	
 	},"VirtualNetwork","");
 	std::this_thread::sleep_for(std::chrono::milliseconds(24*3600*1000));
 	contrailClientSet.contrail().StopWatch(virtualNetworkWatchH);

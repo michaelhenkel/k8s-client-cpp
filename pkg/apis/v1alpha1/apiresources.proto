@@ -20,5 +20,5 @@ message Resources {
 }
 
 message Resource {
-    string resource = 1;
+    bytes resource = 1;
 }

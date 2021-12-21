@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"reflect"
 	"unsafe"
 
@@ -35,6 +36,25 @@ func cr(kind *C.char) contrailResource {
 	return cr
 }
 
+func convertObject(o interface{}) (*v1alpha1PB.Resource, error) {
+	var resByte []byte
+	var err error
+	switch o := o.(type) {
+	case *v1alpha1.VirtualNetwork:
+		res := o
+		resByte, err = json.Marshal(res)
+		if err != nil {
+			return nil, err
+		}
+
+	default:
+		fmt.Println("resource unknown")
+	}
+	return &v1alpha1PB.Resource{
+		Resource: resByte,
+	}, nil
+}
+
 type VirtualNetwork struct {
 }
 
@@ -52,7 +72,7 @@ func (r *VirtualNetwork) objList(clientsetKey C.uintptr_t, ns string, listOption
 			return nil, err
 		}
 		resourceList.Resources = append(resourceList.Resources, &v1alpha1PB.Resource{
-			Resource: string(objByte),
+			Resource: objByte,
 		})
 	}
 	return resourceList, nil
@@ -93,17 +113,18 @@ type contrailWatchHandlerFunc struct {
 }
 
 func (h *contrailWatchHandlerFunc) HandleEvent(eventType int, o interface{}) error {
-	obj, ok := o.(*v1alpha1.VirtualNetwork)
-	if ok {
-		//objProto, _ := proto.Marshal(obj)
-		objProto, _ := obj.Marshal()
-		objBytes := C.CBytes(objProto)
-		objSize := C.int(len(objProto))
-		C.k8s_client_watch_callback_wrapper(C.uintptr_t(h.callbackFn), C.uintptr_t(h.callbackContext), C.int(eventType), objBytes, objSize)
-		C.free(objBytes)
-	} else {
-		C.k8s_client_watch_callback_wrapper(C.uintptr_t(h.callbackFn), C.uintptr_t(h.callbackContext), C.int(eventType), nil, 0)
+	res, err := convertObject(o)
+	if err != nil {
+		return err
 	}
+	objProto, err := proto.Marshal(res)
+	if err != nil {
+		return err
+	}
+	objBytes := C.CBytes(objProto)
+	objSize := C.int(len(objProto))
+	C.k8s_client_watch_callback_wrapper(C.uintptr_t(h.callbackFn), C.uintptr_t(h.callbackContext), C.int(eventType), objBytes, objSize)
+	C.free(objBytes)
 	return nil
 }
 

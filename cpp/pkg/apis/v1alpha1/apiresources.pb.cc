@@ -120,7 +120,7 @@ const char descriptor_table_protodef_pkg_2fapis_2fv1alpha1_2fapiresources_2eprot
   "\001 \001(\t\022\035\n\005kinds\030\002 \003(\0132\016.v1alpha1.Kind\"(\n\004"
   "Kind\022\014\n\004name\030\001 \001(\t\022\022\n\nnamespaced\030\002 \001(\010\"2"
   "\n\tResources\022%\n\tresources\030\001 \003(\0132\022.v1alpha"
-  "1.Resource\"\034\n\010Resource\022\020\n\010resource\030\001 \001(\t"
+  "1.Resource\"\034\n\010Resource\022\020\n\010resource\030\001 \001(\014"
   "B;Z9github.com/michaelhenkel/k8s-client-"
   "cpp/pkg/apis/v1alpha1b\006proto3"
   ;
@@ -854,12 +854,11 @@ const char* Resource::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::i
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
     ptr = ::PROTOBUF_NAMESPACE_ID::internal::ReadTag(ptr, &tag);
     switch (tag >> 3) {
-      // string resource = 1;
+      // bytes resource = 1;
       case 1:
         if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 10)) {
           auto str = _internal_mutable_resource();
           ptr = ::PROTOBUF_NAMESPACE_ID::internal::InlineGreedyStringParser(str, ptr, ctx);
-          CHK_(::PROTOBUF_NAMESPACE_ID::internal::VerifyUTF8(str, "v1alpha1.Resource.resource"));
           CHK_(ptr);
         } else goto handle_unusual;
         continue;
@@ -892,13 +891,9 @@ failure:
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   (void) cached_has_bits;
 
-  // string resource = 1;
+  // bytes resource = 1;
   if (!this->_internal_resource().empty()) {
-    ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::VerifyUtf8String(
-      this->_internal_resource().data(), static_cast<int>(this->_internal_resource().length()),
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::SERIALIZE,
-      "v1alpha1.Resource.resource");
-    target = stream->WriteStringMaybeAliased(
+    target = stream->WriteBytesMaybeAliased(
         1, this->_internal_resource(), target);
   }
 
@@ -918,10 +913,10 @@ size_t Resource::ByteSizeLong() const {
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
 
-  // string resource = 1;
+  // bytes resource = 1;
   if (!this->_internal_resource().empty()) {
     total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
+      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::BytesSize(
         this->_internal_resource());
   }
 
