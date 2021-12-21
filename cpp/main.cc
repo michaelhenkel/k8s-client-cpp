@@ -19,8 +19,10 @@ namespace metav1 = k8s::io::apimachinery::pkg::apis::meta::v1;
 using namespace rapidjson;
 
 
+
 int main()
 {
+	std::map<const char*, uintptr_t> resourceMap;
 	ClientSet clientset("", "/Users/mhenkel/.kube/config");
 	ContrailClientSet contrailClientSet("", "/Users/mhenkel/.kube/config");
 
@@ -41,8 +43,23 @@ int main()
 	auto apiResourceList = clientset.apiResource().List("core.contrail.juniper.net/v1alpha1");
 	for (auto it = apiResourceList.kinds().begin(); it != apiResourceList.kinds().end(); ++it) {
 		printf("apiResource: %s -> namespaced: %d\n", it->name().c_str(), it->namespaced());
+		const char* kind = it->name().c_str();
+		auto watchH = contrailClientSet.contrail().Watch(metav1::ListOptions(), [kind](int watchType, const v1alpha1::Resource* resource){
+			Document d;
+			d.Parse(resource->resource().c_str());
+			//printf("%s", resource->resource().c_str());
+			assert(d.IsObject());
+			assert(d.HasMember("metadata"));
+    		assert(d["metadata"].IsObject());
+			Value::MemberIterator md = d.FindMember("metadata");
+			assert(md->value.HasMember("name"));
+			Value::MemberIterator md_name = md->value.FindMember("name");
+			printf("watchType: %d, kind: %s,  name: %s\n", watchType, kind, md_name->value.GetString());
+	
+		},it->name().c_str(),"");
+		resourceMap.insert(std::pair<const char*, uintptr_t>(it->name().c_str(), watchH));
 	}
-
+/*
 	auto contrailResourceList = contrailClientSet.contrail().List(metav1::ListOptions(),"VirtualNetwork","");
 	for (auto it = contrailResourceList.resources().begin(); it != contrailResourceList.resources().end(); ++it) {
 		Document d;
@@ -73,8 +90,9 @@ int main()
 		printf("watchType: %d, name: %s\n", watchType, md_name->value.GetString());
 	
 	},"VirtualNetwork","");
+*/
 	std::this_thread::sleep_for(std::chrono::milliseconds(24*3600*1000));
-	contrailClientSet.contrail().StopWatch(virtualNetworkWatchH);
+	//contrailClientSet.contrail().StopWatch(virtualNetworkWatchH);
 	/*
 
 	auto podWatchH = clientset.coreV1().Pods("").Watch(metav1::ListOptions(), [](int watchType, const apiv1::Pod* pod){
