@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"reflect"
@@ -32,6 +31,63 @@ func cr(kind *C.char) contrailResource {
 	case "VirtualNetwork":
 		res := &VirtualNetwork{}
 		cr = res
+	case "FloatingIP":
+		res := &FloatingIP{}
+		cr = res
+	case "RouteTarget":
+		res := &RouteTarget{}
+		cr = res
+	case "VirtualNetworkRouter":
+		res := &VirtualNetworkRouter{}
+		cr = res
+	case "FirewallPolicy":
+		res := &FirewallPolicy{}
+		cr = res
+	case "FirewallRule":
+		res := &FirewallRule{}
+		cr = res
+	case "GlobalVrouterConfig":
+		res := &GlobalVrouterConfig{}
+		cr = res
+	case "InstanceIP":
+		res := &InstanceIP{}
+		cr = res
+	case "TagType":
+		res := &TagType{}
+		cr = res
+	case "VirtualMachine":
+		res := &VirtualMachine{}
+		cr = res
+	case "AddressGroup":
+		res := &AddressGroup{}
+		cr = res
+	case "GlobalSystemConfig":
+		res := &GlobalSystemConfig{}
+		cr = res
+	case "Subnet":
+		res := &Subnet{}
+		cr = res
+	case "VirtualMachineInterface":
+		res := &VirtualMachineInterface{}
+		cr = res
+	case "BGPRouter":
+		res := &BGPRouter{}
+		cr = res
+	case "RoutingInstance":
+		res := &RoutingInstance{}
+		cr = res
+	case "Tag":
+		res := &Tag{}
+		cr = res
+	case "VirtualRouter":
+		res := &VirtualRouter{}
+		cr = res
+	case "ApplicationPolicySet":
+		res := &ApplicationPolicySet{}
+		cr = res
+	case "BGPAsAService":
+		res := &BGPAsAService{}
+		cr = res
 	}
 	return cr
 }
@@ -46,48 +102,126 @@ func convertObject(o interface{}) (*v1alpha1PB.Resource, error) {
 		if err != nil {
 			return nil, err
 		}
-
+	case *v1alpha1.FloatingIP:
+		res := o
+		resByte, err = json.Marshal(res)
+		if err != nil {
+			return nil, err
+		}
+	case *v1alpha1.RouteTarget:
+		res := o
+		resByte, err = json.Marshal(res)
+		if err != nil {
+			return nil, err
+		}
+	case *v1alpha1.VirtualNetworkRouter:
+		res := o
+		resByte, err = json.Marshal(res)
+		if err != nil {
+			return nil, err
+		}
+	case *v1alpha1.FirewallPolicy:
+		res := o
+		resByte, err = json.Marshal(res)
+		if err != nil {
+			return nil, err
+		}
+	case *v1alpha1.FirewallRule:
+		res := o
+		resByte, err = json.Marshal(res)
+		if err != nil {
+			return nil, err
+		}
+	case *v1alpha1.GlobalVrouterConfig:
+		res := o
+		resByte, err = json.Marshal(res)
+		if err != nil {
+			return nil, err
+		}
+	case *v1alpha1.InstanceIP:
+		res := o
+		resByte, err = json.Marshal(res)
+		if err != nil {
+			return nil, err
+		}
+	case *v1alpha1.TagType:
+		res := o
+		resByte, err = json.Marshal(res)
+		if err != nil {
+			return nil, err
+		}
+	case *v1alpha1.VirtualMachine:
+		res := o
+		resByte, err = json.Marshal(res)
+		if err != nil {
+			return nil, err
+		}
+	case *v1alpha1.AddressGroup:
+		res := o
+		resByte, err = json.Marshal(res)
+		if err != nil {
+			return nil, err
+		}
+	case *v1alpha1.GlobalSystemConfig:
+		res := o
+		resByte, err = json.Marshal(res)
+		if err != nil {
+			return nil, err
+		}
+	case *v1alpha1.Subnet:
+		res := o
+		resByte, err = json.Marshal(res)
+		if err != nil {
+			return nil, err
+		}
+	case *v1alpha1.VirtualMachineInterface:
+		res := o
+		resByte, err = json.Marshal(res)
+		if err != nil {
+			return nil, err
+		}
+	case *v1alpha1.BGPRouter:
+		res := o
+		resByte, err = json.Marshal(res)
+		if err != nil {
+			return nil, err
+		}
+	case *v1alpha1.RoutingInstance:
+		res := o
+		resByte, err = json.Marshal(res)
+		if err != nil {
+			return nil, err
+		}
+	case *v1alpha1.Tag:
+		res := o
+		resByte, err = json.Marshal(res)
+		if err != nil {
+			return nil, err
+		}
+	case *v1alpha1.VirtualRouter:
+		res := o
+		resByte, err = json.Marshal(res)
+		if err != nil {
+			return nil, err
+		}
+	case *v1alpha1.ApplicationPolicySet:
+		res := o
+		resByte, err = json.Marshal(res)
+		if err != nil {
+			return nil, err
+		}
+	case *v1alpha1.BGPAsAService:
+		res := o
+		resByte, err = json.Marshal(res)
+		if err != nil {
+			return nil, err
+		}
 	default:
 		fmt.Println("resource unknown")
 	}
 	return &v1alpha1PB.Resource{
 		Resource: resByte,
 	}, nil
-}
-
-type VirtualNetwork struct {
-}
-
-func (r *VirtualNetwork) objList(clientsetKey C.uintptr_t, ns string, listOptions metav1.ListOptions) (*v1alpha1PB.Resources, error) {
-	objList, err := contrailClientsetMap[clientsetKey].CoreV1alpha1().VirtualNetworks(ns).List(context.Background(), listOptions)
-	if err != nil {
-		return nil, err
-	}
-	resourceList := &v1alpha1PB.Resources{
-		Resources: []*v1alpha1PB.Resource{},
-	}
-	for _, obj := range objList.Items {
-		objByte, err := json.Marshal(&obj)
-		if err != nil {
-			return nil, err
-		}
-		resourceList.Resources = append(resourceList.Resources, &v1alpha1PB.Resource{
-			Resource: objByte,
-		})
-	}
-	return resourceList, nil
-}
-
-func (r *VirtualNetwork) objWatch(clientsetKey C.uintptr_t, ns string, listOptions metav1.ListOptions) (watch.Interface, error) {
-	objWatch, err := contrailClientsetMap[clientsetKey].CoreV1alpha1().VirtualNetworks(ns).Watch(context.Background(), listOptions)
-	if err != nil {
-		return nil, err
-	}
-	return objWatch, nil
-}
-
-func (r *VirtualNetwork) getType() reflect.Type {
-	return reflect.TypeOf(&v1alpha1.VirtualNetwork{})
 }
 
 //export k8s_client_contrail_list
