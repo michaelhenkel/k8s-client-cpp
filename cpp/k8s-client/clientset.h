@@ -6,6 +6,7 @@
 #include <memory>
 
 #include "corev1.h"
+#include "apiresource.h"
 #include "../go/go.h"
 
 class ClientSet {
@@ -25,6 +26,11 @@ public:
 	CoreV1 coreV1() {
 		return CoreV1(clientsetH);
 	}
+
+	ApiResource apiResource() {
+		return ApiResource(clientsetH);
+	}
+	
 public:
 	uintptr_t clientsetH;
 };

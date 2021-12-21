@@ -1,0 +1,16 @@
+syntax = "proto3";
+package v1alpha1;
+
+//import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/michaelhenkel/k8s-client-cpp/pkg/apis/v1alpha1";
+
+message ApiResource {
+    string groupVersion = 1;
+    repeated Kind kinds = 2;
+}
+
+message Kind {
+    string name = 1;
+    bool namespaced = 2;
+}
