@@ -14,3 +14,11 @@ message Kind {
     string name = 1;
     bool namespaced = 2;
 }
+
+message Resources {
+    repeated Resource resources = 1;
+}
+
+message Resource {
+    string resource = 1;
+}

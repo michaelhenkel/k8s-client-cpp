@@ -9,14 +9,20 @@
 #include <chrono>
 #include <thread>
 
+#include "rapidjson/document.h"
+#include "rapidjson/writer.h"
+#include "rapidjson/stringbuffer.h"
+#include <iostream>
+
 namespace apiv1 = k8s::io::api::core::v1;
 namespace metav1 = k8s::io::apimachinery::pkg::apis::meta::v1;
-//namespace v1alpha1;
+using namespace rapidjson;
 
 
 int main()
 {
 	ClientSet clientset("", "/Users/mhenkel/.kube/config");
+	ContrailClientSet contrailClientSet("", "/Users/mhenkel/.kube/config");
 
 /*
 	auto podList = clientset.coreV1().Pods("").List(metav1::ListOptions());
@@ -37,6 +43,36 @@ int main()
 		printf("apiResource: %s -> namespaced: %d\n", it->name().c_str(), it->namespaced());
 	}
 
+	auto contrailResourceList = contrailClientSet.contrail().List(metav1::ListOptions(),"VirtualNetwork","");
+	for (auto it = contrailResourceList.resources().begin(); it != contrailResourceList.resources().end(); ++it) {
+		Document d;
+		d.Parse(it->resource().c_str());
+		assert(d.IsObject());
+		assert(d.HasMember("metadata"));
+    	assert(d["metadata"].IsObject());
+		Value::MemberIterator md = d.FindMember("metadata");
+		assert(md->value.HasMember("name"));
+		Value::MemberIterator md_name = md->value.FindMember("name");
+		
+		printf("contrailResource name: %s\n", md_name->value.GetString());
+	}
+
+	auto virtualNetworkWatchH = contrailClientSet.contrail().Watch(metav1::ListOptions(), [](int watchType, const v1alpha1::Resource* resource){
+		printf("resource: %s\n", resource->resource().c_str());
+/*
+		Document d;
+		d.Parse(resource->resource().c_str());
+		assert(d.IsObject());
+		assert(d.HasMember("metadata"));
+    	assert(d["metadata"].IsObject());
+		Value::MemberIterator md = d.FindMember("metadata");
+		assert(md->value.HasMember("name"));
+		Value::MemberIterator md_name = md->value.FindMember("name");
+		printf("watchType: %d, name: %s\n", watchType, md_name->value.GetString());
+*/	
+	},"VirtualNetwork","");
+	std::this_thread::sleep_for(std::chrono::milliseconds(24*3600*1000));
+	contrailClientSet.contrail().StopWatch(virtualNetworkWatchH);
 	/*
 
 	auto podWatchH = clientset.coreV1().Pods("").Watch(metav1::ListOptions(), [](int watchType, const apiv1::Pod* pod){

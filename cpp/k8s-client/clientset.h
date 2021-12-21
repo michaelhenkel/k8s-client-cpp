@@ -7,6 +7,7 @@
 
 #include "corev1.h"
 #include "apiresource.h"
+#include "contrail.h"
 #include "../go/go.h"
 
 class ClientSet {
@@ -30,10 +31,33 @@ public:
 	ApiResource apiResource() {
 		return ApiResource(clientsetH);
 	}
+
+
 	
 public:
 	uintptr_t clientsetH;
 };
 
+class ContrailClientSet {
+public:
+	ContrailClientSet(const std::string& masterUrl, const std::string& kubeconfigPath) {
+		auto err = contrail_client_new_from_kubeconfig((char*)masterUrl.data(), (char*)kubeconfigPath.data(), &contrailclientsetH);
+		if (err != NULL) {
+			auto errStr = std::string(err);
+			free(err);
+			throw errStr;
+		}
+	}
+	~ContrailClientSet() {
+		if (contrailclientsetH != 0) contrail_client_delete(contrailclientsetH);
+	}
 
+
+	Contrail contrail() {
+		return Contrail(contrailclientsetH);
+	}
+	
+public:
+	uintptr_t contrailclientsetH;
+};
 #endif // CLIENTSET_H_
