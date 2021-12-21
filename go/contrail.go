@@ -8,6 +8,7 @@ import (
 
 	v1alpha1PB "github.com/michaelhenkel/k8s-client-cpp/pkg/apis/v1alpha1"
 	"google.golang.org/protobuf/proto"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/watch"
 	v1alpha1 "ssd-git.juniper.net/contrail/cn2/contrail/pkg/apis/core/v1alpha1"
@@ -15,8 +16,8 @@ import (
 
 // #include <stdlib.h>
 // #include <stdint.h>
-// typedef void (*k8s_client_watch_callback_fn)(uintptr_t watchKey, int watchType, void* objBytes, int objSize);
-// extern void k8s_client_watch_callback_wrapper(uintptr_t callbackFn, uintptr_t callbackContext, int watchType, void* objBytes, int objSize);
+// typedef void (*client_watch_callback_fn)(uintptr_t watchKey, int watchType, void* objBytes, int objSize);
+// extern void client_watch_callback_wrapper(uintptr_t callbackFn, uintptr_t callbackContext, int watchType, void* objBytes, int objSize);
 import "C"
 
 type contrailResource interface {
@@ -87,6 +88,9 @@ func cr(kind *C.char) contrailResource {
 		cr = res
 	case "BGPAsAService":
 		res := &BGPAsAService{}
+		cr = res
+	case "Namespace":
+		res := &Namespace{}
 		cr = res
 	}
 	return cr
@@ -216,6 +220,12 @@ func convertObject(o interface{}) (*v1alpha1PB.Resource, error) {
 		if err != nil {
 			return nil, err
 		}
+	case *v1.Namespace:
+		res := o
+		resByte, err = json.Marshal(res)
+		if err != nil {
+			return nil, err
+		}
 	default:
 		fmt.Println("resource unknown")
 	}
@@ -224,8 +234,8 @@ func convertObject(o interface{}) (*v1alpha1PB.Resource, error) {
 	}, nil
 }
 
-//export k8s_client_contrail_list
-func k8s_client_contrail_list(clientsetKey C.uintptr_t, kind *C.char, ns *C.char, optsBytes unsafe.Pointer, optsSize C.int, oBytes *unsafe.Pointer, oSize *C.int) *C.char {
+//export client_list
+func client_list(clientsetKey C.uintptr_t, kind *C.char, ns *C.char, optsBytes unsafe.Pointer, optsSize C.int, oBytes *unsafe.Pointer, oSize *C.int) *C.char {
 	listOptions := metav1.ListOptions{}
 	listOptions.Unmarshal(no_copy_slice_from_c_array(optsBytes, optsSize))
 	objList, err := cr(kind).objList(clientsetKey, C.GoString(ns), listOptions)
@@ -241,12 +251,12 @@ func k8s_client_contrail_list(clientsetKey C.uintptr_t, kind *C.char, ns *C.char
 	return nil
 }
 
-type contrailWatchHandlerFunc struct {
+type watchHandlerFunc struct {
 	callbackFn      C.uintptr_t
 	callbackContext C.uintptr_t
 }
 
-func (h *contrailWatchHandlerFunc) HandleEvent(eventType int, o interface{}) error {
+func (h *watchHandlerFunc) HandleEvent(eventType int, o interface{}) error {
 	res, err := convertObject(o)
 	if err != nil {
 		return err
@@ -257,13 +267,13 @@ func (h *contrailWatchHandlerFunc) HandleEvent(eventType int, o interface{}) err
 	}
 	objBytes := C.CBytes(objProto)
 	objSize := C.int(len(objProto))
-	C.k8s_client_watch_callback_wrapper(C.uintptr_t(h.callbackFn), C.uintptr_t(h.callbackContext), C.int(eventType), objBytes, objSize)
+	C.client_watch_callback_wrapper(C.uintptr_t(h.callbackFn), C.uintptr_t(h.callbackContext), C.int(eventType), objBytes, objSize)
 	C.free(objBytes)
 	return nil
 }
 
-//export k8s_client_contrail_watch
-func k8s_client_contrail_watch(clientsetKey C.uintptr_t, kind *C.char, ns *C.char, optsBytes unsafe.Pointer, optsSize C.int,
+//export client_watch
+func client_watch(clientsetKey C.uintptr_t, kind *C.char, ns *C.char, optsBytes unsafe.Pointer, optsSize C.int,
 	callbackFn C.uintptr_t, callbackContext C.uintptr_t) *C.char {
 	listOptions := metav1.ListOptions{}
 	listOptions.Unmarshal(no_copy_slice_from_c_array(optsBytes, optsSize))
@@ -278,13 +288,13 @@ func k8s_client_contrail_watch(clientsetKey C.uintptr_t, kind *C.char, ns *C.cha
 	stopCh := make(chan struct{})
 	watchMap[callbackContext] = stopCh
 
-	go watchHandler(watch, cr(kind).getType(), &contrailWatchHandlerFunc{callbackFn, callbackContext}, stopCh)
+	go watchHandler(watch, cr(kind).getType(), &watchHandlerFunc{callbackFn, callbackContext}, stopCh)
 
 	return nil
 }
 
-//export k8s_client_contrail_stop_watch
-func k8s_client_contrail_stop_watch(watchH C.uintptr_t) C.int {
+//export client_stop_watch
+func client_stop_watch(watchH C.uintptr_t) C.int {
 	watchMu.Lock()
 	defer watchMu.Unlock()
 	if stopCh, ok := watchMap[watchH]; ok {

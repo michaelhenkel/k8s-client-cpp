@@ -14,8 +14,8 @@ import (
 // #include <stdint.h>
 import "C"
 
-//export k8s_client_contrail_get_group_resources
-func k8s_client_contrail_get_group_resources(clientsetKey C.uintptr_t, groupVersion *C.char, oBytes *unsafe.Pointer, oSize *C.int) *C.char {
+//export client_get_group_resources
+func client_get_group_resources(clientsetKey C.uintptr_t, groupVersion *C.char, oBytes *unsafe.Pointer, oSize *C.int) *C.char {
 	clientset := clientsetMap[clientsetKey].(*kubernetes.Clientset)
 	discoveryClient := discovery.NewDiscoveryClient(clientset.RESTClient())
 	_, apiResourceList, err := discoveryClient.ServerGroupsAndResources()

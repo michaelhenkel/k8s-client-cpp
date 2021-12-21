@@ -10,24 +10,25 @@ import (
 
 	apierrs "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
-	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/apimachinery/pkg/util/clock"
+	"k8s.io/apimachinery/pkg/watch"
 )
 
 // #include <stdint.h>
-// typedef void (*k8s_client_watch_callback_fn)(uintptr_t watchKey, int watchType, void* objBytes, int objSize);
-// void k8s_client_watch_callback_wrapper(uintptr_t callbackFn, uintptr_t callbackContext, int watchType, void* objBytes, int objSize) {
-// 	((k8s_client_watch_callback_fn)callbackFn)(callbackContext, watchType, objBytes, objSize);
+// typedef void (*client_watch_callback_fn)(uintptr_t watchKey, int watchType, void* objBytes, int objSize);
+// void client_watch_callback_wrapper(uintptr_t callbackFn, uintptr_t callbackContext, int watchType, void* objBytes, int objSize) {
+// 	((client_watch_callback_fn)callbackFn)(callbackContext, watchType, objBytes, objSize);
 // }
 import "C"
 
 const (
-	Closed = 0
-	Added = 1
+	Closed   = 0
+	Added    = 1
 	Modified = 2
-	Deleted = 3
-	Error = -1
+	Deleted  = 3
+	Error    = -1
 )
+
 type WatchEventHandler interface {
 	HandleEvent(eventType int, obj interface{}) error
 }
@@ -35,9 +36,8 @@ type WatchEventHandler interface {
 var watchMu sync.Mutex
 var watchMap = map[C.uintptr_t]chan struct{}{}
 
-
 // watchHandler watches w and keeps *resourceVersion up to date.
-func watchHandler (w watch.Interface, expectedType interface{}, handler WatchEventHandler, stopCh <-chan struct{}) (string, error) {
+func watchHandler(w watch.Interface, expectedType interface{}, handler WatchEventHandler, stopCh <-chan struct{}) (string, error) {
 	start := clock.RealClock{}.Now()
 	eventCount := 0
 	resourceVersion := ""
@@ -46,7 +46,7 @@ func watchHandler (w watch.Interface, expectedType interface{}, handler WatchEve
 	// we're coming back in with the same watch interface.
 	defer w.Stop()
 
-	loop:
+loop:
 	for {
 		select {
 		case <-stopCh:

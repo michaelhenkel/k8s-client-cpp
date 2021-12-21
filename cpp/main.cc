@@ -23,10 +23,24 @@ using namespace rapidjson;
 int main()
 {
 	std::map<const char*, uintptr_t> resourceMap;
-	ClientSet clientset("", "/Users/mhenkel/.kube/config");
-	ContrailClientSet contrailClientSet("", "/Users/mhenkel/.kube/config");
 
-	auto apiResourceList = clientset.apiResource().List("core.contrail.juniper.net/v1alpha1");
+	ClientSet contrailClientSet("", "/Users/mhenkel/.kube/config", "core.contrail.juniper.net/v1alpha1");
+	ClientSet kubernetesClientSet("", "/Users/mhenkel/.kube/config", "v1");
+
+	const char* namespaceKind = "Namespace";	
+	auto watchH = kubernetesClientSet.contrail().Watch(metav1::ListOptions(), [namespaceKind](int watchType, const v1alpha1::Resource* resource){
+			Document d;
+			d.Parse(resource->resource().c_str());
+			assert(d.IsObject());
+			assert(d.HasMember("metadata"));
+    		assert(d["metadata"].IsObject());
+			Value::MemberIterator md = d.FindMember("metadata");
+			assert(md->value.HasMember("name"));
+			Value::MemberIterator md_name = md->value.FindMember("name");
+			printf("watchType: %d, kind: %s,  name: %s\n", watchType, namespaceKind, md_name->value.GetString());
+	},namespaceKind, "");
+
+	auto apiResourceList = kubernetesClientSet.apiResource().List("core.contrail.juniper.net/v1alpha1");
 	for (auto it = apiResourceList.kinds().begin(); it != apiResourceList.kinds().end(); ++it) {
 		printf("apiResource: %s -> namespaced: %d\n", it->name().c_str(), it->namespaced());
 		const char* kind = it->name().c_str();

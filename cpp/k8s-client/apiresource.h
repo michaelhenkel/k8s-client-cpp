@@ -20,7 +20,7 @@ public:
 	v1alpha1::ApiResource List(const std::string& groupVersion) {
 		void *objListBytes = NULL;
 		int objListSize = 0;
-		auto err = k8s_client_contrail_get_group_resources(clientsetH, (char*)groupVersion.data(), &objListBytes, &objListSize);
+		auto err = client_get_group_resources(clientsetH, (char*)groupVersion.data(), &objListBytes, &objListSize);
 		if (err != NULL) {
 			auto errStr = std::string(err);
 			free(err);

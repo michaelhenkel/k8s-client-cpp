@@ -19,39 +19,36 @@ var clientsetMap = map[C.uintptr_t]kubernetes.Interface{}
 var contrailClientsetMu sync.Mutex
 var contrailClientsetMap = map[C.uintptr_t]contrailClient.Interface{}
 
-//export k8s_client_new_from_kubeconfig
-func k8s_client_new_from_kubeconfig(masterUrl, kubeconfigPath *C.char, oClientsetH *C.uintptr_t) *C.char {
+//export client_new_from_kubeconfig
+func client_new_from_kubeconfig(masterUrl, kubeconfigPath *C.char, apiGroup *C.char, oClientsetH *C.uintptr_t) *C.char {
 	config, err := clientcmd.BuildConfigFromFlags(C.GoString(masterUrl), C.GoString(kubeconfigPath))
 	if err != nil {
 		return C.CString(err.Error())
 	}
-	clientset, err := kubernetes.NewForConfig(config)
-	if err != nil {
-		return C.CString(err.Error())
+
+	switch C.GoString(apiGroup) {
+	case "core.contrail.juniper.net/v1alpha1":
+		clientset, err := contrailClient.NewForConfig(config)
+		if err != nil {
+			return C.CString(err.Error())
+		}
+
+		contrailClientsetMu.Lock()
+		defer contrailClientsetMu.Unlock()
+		*oClientsetH = C.uintptr_t(uintptr((unsafe.Pointer(clientset))))
+		contrailClientsetMap[*oClientsetH] = clientset
+	case "v1":
+		clientset, err := kubernetes.NewForConfig(config)
+		if err != nil {
+			return C.CString(err.Error())
+		}
+
+		clientsetMu.Lock()
+		defer clientsetMu.Unlock()
+		*oClientsetH = C.uintptr_t(uintptr((unsafe.Pointer(clientset))))
+		clientsetMap[*oClientsetH] = clientset
 	}
 
-	clientsetMu.Lock()
-	defer clientsetMu.Unlock()
-	*oClientsetH = C.uintptr_t(uintptr((unsafe.Pointer(clientset))))
-	clientsetMap[*oClientsetH] = clientset
-	return nil
-}
-
-//export contrail_client_new_from_kubeconfig
-func contrail_client_new_from_kubeconfig(masterUrl, kubeconfigPath *C.char, oClientsetH *C.uintptr_t) *C.char {
-	config, err := clientcmd.BuildConfigFromFlags(C.GoString(masterUrl), C.GoString(kubeconfigPath))
-	if err != nil {
-		return C.CString(err.Error())
-	}
-	clientset, err := contrailClient.NewForConfig(config)
-	if err != nil {
-		return C.CString(err.Error())
-	}
-
-	contrailClientsetMu.Lock()
-	defer contrailClientsetMu.Unlock()
-	*oClientsetH = C.uintptr_t(uintptr((unsafe.Pointer(clientset))))
-	contrailClientsetMap[*oClientsetH] = clientset
 	return nil
 }
 
@@ -62,8 +59,8 @@ func k8s_client_delete(clientsetH C.uintptr_t) {
 	delete(clientsetMap, clientsetH)
 }
 
-//export contrail_client_delete
-func contrail_client_delete(clientsetH C.uintptr_t) {
+//export client_delete
+func client_delete(clientsetH C.uintptr_t) {
 	contrailClientsetMu.Lock()
 	defer contrailClientsetMu.Unlock()
 	delete(contrailClientsetMap, clientsetH)
