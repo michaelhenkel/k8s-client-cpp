@@ -21,7 +21,7 @@ namespace metav1 = k8s::io::apimachinery::pkg::apis::meta::v1;
 
 void callbackFn(int watchType, const v1alpha1::Resource* resource, const char* kind)
 {
-	//printf("%s\n",resource->resource().c_str());
+	printf("%s\n",resource->resource().c_str());
 	Document d;
 	d.Parse(resource->resource().c_str());
 	Value k;
@@ -43,7 +43,6 @@ void watcher(ClientSet clientSet, const char* kind){
 class Watcher{
 public:
 	Watcher(ClientSet clientSet, const char* kind): clientSet(clientSet), kind(kind) {}
-
     void Start(){
         printf("starting watcherThread for kind %s\n", kind);
         threadPtr = std::make_shared<std::thread>(watcher,clientSet, kind);

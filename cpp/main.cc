@@ -53,31 +53,21 @@ int main()
 	ClientSet contrailClientSet("", "/Users/mhenkel/.kube/config", "core.contrail.juniper.net/v1alpha1");
 	ClientSet kubernetesClientSet("", "/Users/mhenkel/.kube/config", "v1");
 
-	const char* namespaceKind = "Namespace";	
-	printf("calling add for kind %s\n", namespaceKind);
-	wm->Add(namespaceKind, kubernetesClientSet);
-	printf("calling start for kind %s\n", namespaceKind);
-	wm->Start(namespaceKind);
-	printf("called start for kind %s\n", namespaceKind);
-	//auto threadPtr = std::make_shared<std::thread>(watcher, kubernetesClientSet, namespaceKind);
-	//threadPtr->join();
-/*
-	auto watchH = kubernetesClientSet.resource().Watch(metav1::ListOptions(), [namespaceKind](int watchType, const v1alpha1::Resource* resource){
-		callbackFn(watchType, resource, namespaceKind);
-	},namespaceKind, "");
-	resourceMap.insert(std::pair<const char*, uintptr_t>(namespaceKind, watchH));
-*/
 
+	const char* namespaceKind = "Namespace";	
+	wm->Add(namespaceKind, kubernetesClientSet);
+	wm->Start(namespaceKind);
+/*
+	const char* kind = "VirtualNetwork";	
+	wm->Add(kind, contrailClientSet);
+	wm->Start(kind);
+*/
 /*
 	auto apiResourceList = kubernetesClientSet.apiResource().List("core.contrail.juniper.net/v1alpha1");
-	for (auto it = apiResourceList.kinds().begin(); it != apiResourceList.kinds().end(); ++it) {
-		
+	for (auto it = apiResourceList.kinds().begin(); it != apiResourceList.kinds().end(); ++it) {		
 		const char* kind = it->name().c_str();
-		watchit = watchMap.find(kind);
-		if (watchit == watchMap.end())
-		{
-			std::thread wt(watcher, kubernetesClientSet, kind);
-		}
+		wm->Add(kind, contrailClientSet);
+		wm->Start(kind);
 	}
 */
 	std::this_thread::sleep_for(std::chrono::milliseconds(24*3600*1000));
