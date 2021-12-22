@@ -24,7 +24,7 @@ public:
 	}
 
 
-	Resource contrail() {
+	Resource resource() {
 		return Resource(clientsetH);
 	}
 

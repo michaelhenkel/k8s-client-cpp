@@ -1,8 +1,11 @@
 package main
 
 import (
+	"context"
+	"encoding/json"
 	"fmt"
 
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
@@ -32,5 +35,13 @@ func main() {
 	}
 	for k, v := range arMap {
 		fmt.Printf("%s:%v\n", k, v)
+	}
+	podList, _ := clientset.CoreV1().Pods("default").List(context.Background(), metav1.ListOptions{
+		TypeMeta: metav1.TypeMeta{},
+	})
+	for _, pod := range podList.Items {
+		pByte, _ := json.Marshal(pod)
+		fmt.Println(string(pByte))
+
 	}
 }

@@ -15,9 +15,9 @@ require (
 	github.com/spf13/cobra v1.2.1 // indirect
 	google.golang.org/protobuf v1.26.0
 	gopkg.in/check.v1 v1.0.0-20200227125254-8fa46927fb4f // indirect
-	k8s.io/api v0.20.2
-	k8s.io/apimachinery v0.20.2
-	k8s.io/client-go v12.0.0+incompatible
+	k8s.io/api v0.21.0
+	k8s.io/apimachinery v0.21.0
+	k8s.io/client-go v0.21.0
 	k8s.io/klog/v2 v2.10.0 // indirect
 	ssd-git.juniper.net/contrail/cn2/contrail v0.0.0-00010101000000-000000000000
 )
