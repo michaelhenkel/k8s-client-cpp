@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"path/filepath"
 	"sync"
 	"unsafe"
@@ -65,16 +66,19 @@ func client_new_from_kubeconfig(masterUrl, kubeconfigPath *C.char, apiGroup *C.c
 	return nil
 }
 
-//export k8s_client_delete
-func k8s_client_delete(clientsetH C.uintptr_t) {
-	clientsetMu.Lock()
-	defer clientsetMu.Unlock()
-	delete(clientsetMap, clientsetH)
-}
-
 //export client_delete
 func client_delete(clientsetH C.uintptr_t) {
-	contrailClientsetMu.Lock()
-	defer contrailClientsetMu.Unlock()
-	delete(contrailClientsetMap, clientsetH)
+	fmt.Println("destructor called")
+	/*
+		if _, ok := contrailClientsetMap[clientsetH]; ok {
+			contrailClientsetMu.Lock()
+			defer contrailClientsetMu.Unlock()
+			delete(contrailClientsetMap, clientsetH)
+		}
+		if _, ok := clientsetMap[clientsetH]; ok {
+			clientsetMu.Lock()
+			defer clientsetMu.Unlock()
+			delete(clientsetMap, clientsetH)
+		}
+	*/
 }

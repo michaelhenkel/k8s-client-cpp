@@ -33,25 +33,38 @@ void callbackFn(int watchType, const v1alpha1::Resource* resource, const char* k
 	printf("watchType: %d, kind: %s,  name: %s\n", watchType, knd->value.GetString(), md_name->value.GetString());
 }
 
-void watcher(ClientSet clientSet, const char* kind){
-    auto watch = clientSet.resource().Watch(metav1::ListOptions(), [kind](int watchType, const v1alpha1::Resource* resource){
+void watcher(ClientSet* clientSet, const char* kind, uintptr_t* watch){
+    uintptr_t w = clientSet->resource().Watch(metav1::ListOptions(), [kind](int watchType, const v1alpha1::Resource* resource){
 	    printf("kind: %s\n",kind);
         callbackFn(watchType, resource, kind);
     },kind, "");
+    watch = &w;
 }
 
 class Watcher{
 public:
-	Watcher(ClientSet clientSet, const char* kind): clientSet(clientSet), kind(kind) {}
+	Watcher(ClientSet* clientSet, const char* kind): clientSet(clientSet), kind(kind) {}
     void Start(){
         printf("starting watcherThread for kind %s\n", kind);
-        threadPtr = std::make_shared<std::thread>(watcher,clientSet, kind);
+        threadPtr = std::make_shared<std::thread>(watcher,clientSet, kind, watch);
+    };
+    void Status(){
+        if (threadPtr){
+            printf("thread is running\n");
+        } else {
+            printf("thread is not running\n");
+        }
+        if (watch){
+            printf("watch is running\n");
+        } else {
+            printf("watch is not running\n");
+        }
     };
 private:
-    ClientSet clientSet;
+    ClientSet* clientSet;
     const char* kind;
 	std::shared_ptr<std::thread> threadPtr;
-	uintptr_t watch;
+	uintptr_t* watch;
 };
 
 
@@ -60,7 +73,7 @@ public:
 	WatchManager() {
         watchMap.clear();
     }
-	void Add(const char* kind, ClientSet clientSet){
+	void Add(const char* kind, ClientSet* clientSet){
         printf("add watcher for kind %s\n", kind);
 		watchit = watchMap.find(kind);
 		if (watchit == watchMap.end())
@@ -85,6 +98,13 @@ public:
         watchit = watchMap.find(kind);
 		if (watchit != watchMap.end())
 		{  
+        }
+    };
+    void Status(const char* kind){
+        watchit = watchMap.find(kind);
+		if (watchit != watchMap.end())
+		{  
+            watchit->second->Status();
         }
     };
 private:
