@@ -19,17 +19,11 @@
 namespace apiv1 = k8s::io::api::core::v1;
 namespace metav1 = k8s::io::apimachinery::pkg::apis::meta::v1;
 
-void cbFn(int watchType, const v1alpha1::Resource* resource, const char* kind)
+void cbFn(int watchType, rapidjson::Document* d)
 {
-	//printf("%s\n",resource->resource().c_str());
-	Document d;
-	d.Parse(resource->resource().c_str());
-	Value k;
-	k.SetString(StringRef(kind));  
-	d.AddMember("kind", k, d.GetAllocator());
-	Value::MemberIterator md = d.FindMember("metadata");
+	Value::MemberIterator md = d->FindMember("metadata");
 	Value::MemberIterator md_name = md->value.FindMember("name");
-	Value::MemberIterator knd = d.FindMember("kind");
+	Value::MemberIterator knd = d->FindMember("kind");
 	printf("watchType: %d, kind: %s,  name: %s\n", watchType, knd->value.GetString(), md_name->value.GetString());
 }
 

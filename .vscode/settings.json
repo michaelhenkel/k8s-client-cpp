@@ -66,6 +66,7 @@
         "unordered_set": "cpp",
         "utility": "cpp",
         "vector": "cpp",
-        "memory_resource": "cpp"
+        "memory_resource": "cpp",
+        "__functional_03": "cpp"
     }
 }

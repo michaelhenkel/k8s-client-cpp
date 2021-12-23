@@ -18,16 +18,22 @@
 using namespace rapidjson;
 
 namespace metav1 = k8s::io::apimachinery::pkg::apis::meta::v1;
+typedef std::function<void(int watchType, rapidjson::Document* d)> WatchCallbackFn;
 
 class Watcher{
 public:
 	Watcher(ClientSet* clientSet, const char* kind): clientSet(clientSet), kind(kind) {}
-    typedef std::function<void(int watchType, const v1alpha1::Resource*, const char* kind)> WatchCallbackFn;
+    
     void Start(WatchCallbackFn callbackFn){
         const char* k = kind;
         WatchCallbackFn cbFn = callbackFn;
         watch = clientSet->resource().Watch(metav1::ListOptions(), [k,cbFn](int watchType, const v1alpha1::Resource* resource){
-            cbFn(watchType, resource, k);
+            Document d;
+	        d.Parse(resource->resource().c_str());
+            Value key;
+	        key.SetString(StringRef(k));  
+	        d.AddMember("kind", key, d.GetAllocator());
+            cbFn(watchType, &d);
         }, kind, "");
     };
     void Status(){
@@ -66,7 +72,7 @@ public:
 		}		
 
 	};
-    typedef std::function<void(int watchType, const v1alpha1::Resource*, const char* kind)> WatchCallbackFn;
+    //typedef std::function<void(int watchType, rapidjson::Document d)> WatchCallbackFn;
     void Start(const char* kind, WatchCallbackFn callbackFn){
         printf("searching for kind %s\n", kind);
         watchit = watchMap.find(kind);
