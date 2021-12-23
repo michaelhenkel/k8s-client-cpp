@@ -19,54 +19,37 @@ using namespace rapidjson;
 
 namespace metav1 = k8s::io::apimachinery::pkg::apis::meta::v1;
 
-void callbackFn(int watchType, const v1alpha1::Resource* resource, const char* kind)
-{
-	printf("%s\n",resource->resource().c_str());
-	Document d;
-	d.Parse(resource->resource().c_str());
-	Value k;
-	k.SetString(StringRef(kind));  
-	d.AddMember("kind", k, d.GetAllocator());
-	Value::MemberIterator md = d.FindMember("metadata");
-	Value::MemberIterator md_name = md->value.FindMember("name");
-	Value::MemberIterator knd = d.FindMember("kind");
-	printf("watchType: %d, kind: %s,  name: %s\n", watchType, knd->value.GetString(), md_name->value.GetString());
-}
-
-void watcher(ClientSet* clientSet, const char* kind, uintptr_t* watch){
-    uintptr_t w = clientSet->resource().Watch(metav1::ListOptions(), [kind](int watchType, const v1alpha1::Resource* resource){
-	    printf("kind: %s\n",kind);
-        callbackFn(watchType, resource, kind);
-    },kind, "");
-    watch = &w;
-}
-
 class Watcher{
 public:
 	Watcher(ClientSet* clientSet, const char* kind): clientSet(clientSet), kind(kind) {}
-    void Start(){
-        printf("starting watcherThread for kind %s\n", kind);
-        threadPtr = std::make_shared<std::thread>(watcher,clientSet, kind, watch);
+    typedef std::function<void(int watchType, const v1alpha1::Resource*, const char* kind)> WatchCallbackFn;
+    void Start(WatchCallbackFn callbackFn){
+        const char* k = kind;
+        WatchCallbackFn cbFn = callbackFn;
+        watch = clientSet->resource().Watch(metav1::ListOptions(), [k,cbFn](int watchType, const v1alpha1::Resource* resource){
+            cbFn(watchType, resource, k);
+        }, kind, "");
     };
     void Status(){
-        if (threadPtr){
-            printf("thread is running\n");
-        } else {
-            printf("thread is not running\n");
-        }
         if (watch){
             printf("watch is running\n");
         } else {
             printf("watch is not running\n");
         }
     };
+    void Stop(){
+        if (watch){
+            printf("stopping watch\n");
+            clientSet->resource().StopWatch(watch);
+        } else {
+            printf("cannot stop, watch not found\n");
+        }
+    };
 private:
     ClientSet* clientSet;
     const char* kind;
-	std::shared_ptr<std::thread> threadPtr;
-	uintptr_t* watch;
+	uintptr_t watch;
 };
-
 
 class WatchManager {
 public:
@@ -83,21 +66,24 @@ public:
 		}		
 
 	};
-    void Start(const char* kind){
+    typedef std::function<void(int watchType, const v1alpha1::Resource*, const char* kind)> WatchCallbackFn;
+    void Start(const char* kind, WatchCallbackFn callbackFn){
         printf("searching for kind %s\n", kind);
         watchit = watchMap.find(kind);
 		if (watchit != watchMap.end())
 		{  
             printf("%s found\n", kind);
-            watchit->second->Start();
+            watchit->second->Start(callbackFn);
         } else {
             printf("%s not found\n", kind);
         }
     };
     void Stop(const char* kind){
+        printf("calling stop\n");
         watchit = watchMap.find(kind);
 		if (watchit != watchMap.end())
 		{  
+            watchit->second->Stop();
         }
     };
     void Status(const char* kind){

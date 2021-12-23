@@ -228,6 +228,7 @@ func convertObject(o interface{}) (*v1alpha1PB.Resource, error) {
 		}
 	default:
 		fmt.Println("resource unknown")
+		return nil, nil
 	}
 	return &v1alpha1PB.Resource{
 		Resource: resByte,
@@ -261,14 +262,16 @@ func (h *watchHandlerFunc) HandleEvent(eventType int, o interface{}) error {
 	if err != nil {
 		return err
 	}
-	objProto, err := proto.Marshal(res)
-	if err != nil {
-		return err
+	if res != nil {
+		objProto, err := proto.Marshal(res)
+		if err != nil {
+			return err
+		}
+		objBytes := C.CBytes(objProto)
+		objSize := C.int(len(objProto))
+		C.client_watch_callback_wrapper(C.uintptr_t(h.callbackFn), C.uintptr_t(h.callbackContext), C.int(eventType), objBytes, objSize)
+		C.free(objBytes)
 	}
-	objBytes := C.CBytes(objProto)
-	objSize := C.int(len(objProto))
-	C.client_watch_callback_wrapper(C.uintptr_t(h.callbackFn), C.uintptr_t(h.callbackContext), C.int(eventType), objBytes, objSize)
-	C.free(objBytes)
 	return nil
 }
 

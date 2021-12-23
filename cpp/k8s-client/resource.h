@@ -53,6 +53,7 @@ public:
 		if (client_stop_watch(watchH)) {
 			delete (WatchCallbackFn*)watchH;
 		}
+		
 	}
 
 private:
