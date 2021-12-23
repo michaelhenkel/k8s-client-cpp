@@ -39,17 +39,18 @@ int main()
 	wm->Add(namespaceKind, kubernetesClientSet);
 	wm->Start(namespaceKind, cbFn);
 
-
+/*
 	auto apiResourceList = kubernetesClientSet->apiResource().List("core.contrail.juniper.net/v1alpha1");
 	for (auto it = apiResourceList.kinds().begin(); it != apiResourceList.kinds().end(); ++it) {
 		const char* kind = it->name().c_str();	
 		wm->Add(kind, contrailClientSet);
 		wm->Start(kind, cbFn);
 	}
+*/
 
 
-
-	const char* kind = "VirtualNetwork";
+/*
+	const char* kind = "Namespace";
 	printf("waiting 5 sec %s\n", kind);
 	std::this_thread::sleep_for(std::chrono::seconds(5));
 	printf("done waiting 5 sec %s\n", kind);
@@ -64,7 +65,7 @@ int main()
 	std::this_thread::sleep_for(std::chrono::seconds(3));
 	printf("starting watch again %s\n", kind);
 	wm->Start(kind, cbFn);
-
+*/
 	while(1){};
 
 	return 0;

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"reflect"
+	"time"
 	"unsafe"
 
 	v1alpha1PB "github.com/michaelhenkel/k8s-client-cpp/pkg/apis/v1alpha1"
@@ -11,6 +12,7 @@ import (
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/watch"
+	"k8s.io/klog"
 	v1alpha1 "ssd-git.juniper.net/contrail/cn2/contrail/pkg/apis/core/v1alpha1"
 )
 
@@ -26,9 +28,9 @@ type resource interface {
 	getType() reflect.Type
 }
 
-func cr(kind *C.char) resource {
+func cr(kind string) resource {
 	var cr resource
-	switch C.GoString(kind) {
+	switch kind {
 	case "VirtualNetwork":
 		res := &VirtualNetwork{}
 		cr = res
@@ -239,7 +241,8 @@ func convertObject(o interface{}) (*v1alpha1PB.Resource, error) {
 func client_list(clientsetKey C.uintptr_t, kind *C.char, ns *C.char, optsBytes unsafe.Pointer, optsSize C.int, oBytes *unsafe.Pointer, oSize *C.int) *C.char {
 	listOptions := metav1.ListOptions{}
 	listOptions.Unmarshal(no_copy_slice_from_c_array(optsBytes, optsSize))
-	objList, err := cr(kind).objList(clientsetKey, C.GoString(ns), listOptions)
+	kindString := C.GoString(kind)
+	objList, err := cr(kindString).objList(clientsetKey, C.GoString(ns), listOptions)
 	if err != nil {
 		return C.CString(err.Error())
 	}
@@ -281,17 +284,32 @@ func client_watch(clientsetKey C.uintptr_t, kind *C.char, ns *C.char, optsBytes 
 	listOptions := metav1.ListOptions{}
 	listOptions.Unmarshal(no_copy_slice_from_c_array(optsBytes, optsSize))
 	listOptions.ResourceVersion = "0"
-	watch, err := cr(kind).objWatch(clientsetKey, C.GoString(ns), listOptions)
-	if err != nil {
-		return C.CString(err.Error())
-	}
 
 	watchMu.Lock()
 	defer watchMu.Unlock()
 	stopCh := make(chan struct{})
 	watchMap[callbackContext] = stopCh
 
-	go watchHandler(watch, cr(kind).getType(), &watchHandlerFunc{callbackFn, callbackContext}, stopCh)
+	kindString := C.GoString(kind)
+	namespaceString := C.GoString(ns)
+
+	go func(resourceType reflect.Type, whf *watchHandlerFunc, stopCh chan struct{}, kind string, clientsetKey C.uintptr_t, ns string, listOptions metav1.ListOptions) {
+		fmt.Println("1")
+		for {
+			watchInterface, err := cr(kind).objWatch(clientsetKey, ns, listOptions)
+			if err != nil {
+				klog.Errorf("cannot get watch interface %s, trying again in 5 seconds", err)
+				time.Sleep(5 * time.Second)
+			} else {
+				if _, err := watchHandler(watchInterface, resourceType, whf, stopCh); err != nil {
+					klog.Error("Watch handler stopped unexpectedly, restarting in 5 seconds")
+					time.Sleep(5 * time.Second)
+				}
+			}
+		}
+	}(cr(kindString).getType(), &watchHandlerFunc{callbackFn, callbackContext}, stopCh, kindString, clientsetKey, namespaceString, listOptions)
+
+	//go watchHandler(watch, cr(kind).getType(), &watchHandlerFunc{callbackFn, callbackContext}, stopCh)
 
 	return nil
 }

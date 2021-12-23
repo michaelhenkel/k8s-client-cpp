@@ -18,6 +18,7 @@ require (
 	k8s.io/api v0.21.0
 	k8s.io/apimachinery v0.21.0
 	k8s.io/client-go v0.21.0
+	k8s.io/klog v1.0.0 // indirect
 	k8s.io/klog/v2 v2.10.0 // indirect
 	ssd-git.juniper.net/contrail/cn2/contrail v0.0.0-00010101000000-000000000000
 )

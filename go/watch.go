@@ -6,12 +6,11 @@ import (
 	"sync"
 	"time"
 
-	"github.com/golang/glog"
-
 	apierrs "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/util/clock"
 	"k8s.io/apimachinery/pkg/watch"
+	"k8s.io/klog"
 )
 
 // #include <stdint.h>
@@ -46,47 +45,49 @@ func watchHandler(w watch.Interface, expectedType interface{}, handler WatchEven
 	// we're coming back in with the same watch interface.
 	defer w.Stop()
 
-loop:
+	//loop:
 	for {
 		select {
 		case <-stopCh:
-			glog.Infof("Stop requested")
+			klog.Infof("Stop requested")
 			handler.HandleEvent(Closed, nil)
 			return "", errors.New("Stop requested")
 		case event, ok := <-w.ResultChan():
 			if !ok {
-				break loop
+				klog.Infof("Event nok")
+				return "", errors.New("Event nok")
+				//break loop
 			}
 			if event.Type == watch.Error {
-				glog.Errorf("watchHandler: %v", apierrs.FromObject(event.Object))
+				klog.Errorf("watchHandler: %v", apierrs.FromObject(event.Object))
 				handler.HandleEvent(Error, -1)
 				return "", apierrs.FromObject(event.Object)
 			}
 			if e, a := expectedType, reflect.TypeOf(event.Object); e != nil && e != a {
-				glog.Infof("watchHandler: expected type %v, but watch event object had type %v", e, a)
+				klog.Infof("watchHandler: expected type %v, but watch event object had type %v", e, a)
 				continue
 			}
 			meta, err := meta.Accessor(event.Object)
 			if err != nil {
-				glog.Infof("watchHandler: unable to understand watch event %#v", event)
+				klog.Infof("watchHandler: unable to understand watch event %#v", event)
 				continue
 			}
 			resourceVersion = meta.GetResourceVersion()
 			switch event.Type {
 			case watch.Added:
 				handler.HandleEvent(Added, event.Object)
-				glog.Infof("watch.Added: %v, %v/%v\n", expectedType, meta.GetNamespace(), meta.GetName())
+				klog.Infof("watch.Added: %v, %v/%v\n", expectedType, meta.GetNamespace(), meta.GetName())
 			case watch.Modified:
 				handler.HandleEvent(Modified, event.Object)
-				glog.Infof("watch.Modified: %v, %v/%v\n", expectedType, meta.GetNamespace(), meta.GetName())
+				klog.Infof("watch.Modified: %v, %v/%v\n", expectedType, meta.GetNamespace(), meta.GetName())
 			case watch.Deleted:
 				handler.HandleEvent(Deleted, event.Object)
-				glog.Infof("watch.Deleted: %v, %v/%v\n", expectedType, meta.GetNamespace(), meta.GetName())
+				klog.Infof("watch.Deleted: %v, %v/%v\n", expectedType, meta.GetNamespace(), meta.GetName())
 				// TODO: Will any consumers need access to the "last known
 				// state", which is passed in event.Object? If so, may need
 				// to change this.
 			default:
-				glog.Errorf("watchHandler: unable to understand watch event %#v", event)
+				klog.Errorf("watchHandler: unable to understand watch event %#v", event)
 			}
 			eventCount++
 		}
@@ -94,11 +95,11 @@ loop:
 
 	watchDuration := clock.RealClock{}.Now().Sub(start)
 	if watchDuration < 1*time.Second && eventCount == 0 {
-		glog.Errorf("watchHandler: Unexpected watch close - watch lasted less than a second and no items received")
+		klog.Errorf("watchHandler: Unexpected watch close - watch lasted less than a second and no items received")
 		handler.HandleEvent(Error, nil)
 		return "", errors.New("very short watch")
 	}
-	glog.Infof("watchHandler: Watch close - %v total %v items received", expectedType, eventCount)
+	klog.Infof("watchHandler: Watch close - %v total %v items received", expectedType, eventCount)
 	handler.HandleEvent(Closed, nil)
 	return resourceVersion, nil
 }
