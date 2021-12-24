@@ -3,256 +3,167 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"reflect"
+	"path/filepath"
+	"sync"
 	"time"
-	"unsafe"
 
 	v1alpha1PB "github.com/michaelhenkel/k8s-client-cpp/pkg/apis/v1alpha1"
 	"google.golang.org/protobuf/proto"
 	v1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/watch"
-	"k8s.io/klog"
+	"k8s.io/client-go/informers"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/cache"
+	"k8s.io/client-go/tools/clientcmd"
+	"k8s.io/client-go/util/homedir"
 	v1alpha1 "ssd-git.juniper.net/contrail/cn2/contrail/pkg/apis/core/v1alpha1"
+	contrailClient "ssd-git.juniper.net/contrail/cn2/contrail/pkg/client/clientset_generated/clientset"
+	contrailInformers "ssd-git.juniper.net/contrail/cn2/contrail/pkg/client/informers_generated/externalversions"
 )
 
 // #include <stdlib.h>
 // #include <stdint.h>
 // typedef void (*client_watch_callback_fn)(uintptr_t watchKey, int watchType, void* objBytes, int objSize);
 // extern void client_watch_callback_wrapper(uintptr_t callbackFn, uintptr_t callbackContext, int watchType, void* objBytes, int objSize);
+
 import "C"
 
-type resource interface {
-	objList(C.uintptr_t, string, metav1.ListOptions) (*v1alpha1PB.Resources, error)
-	objWatch(C.uintptr_t, string, metav1.ListOptions) (watch.Interface, error)
-	getType() reflect.Type
+const (
+	Closed   = 0
+	Added    = 1
+	Modified = 2
+	Deleted  = 3
+	Error    = -1
+)
+
+func getClientSets() (*contrailClient.Clientset, *kubernetes.Clientset, error) {
+	bla()
+	var err error
+	var kconfig string
+	config, _ := rest.InClusterConfig()
+	if config == nil {
+		if home := homedir.HomeDir(); home != "" {
+			kconfig = filepath.Join(home, ".kube", "config")
+		}
+		config, err = clientcmd.BuildConfigFromFlags("", kconfig)
+		if err != nil {
+			return nil, nil, err
+		}
+	}
+
+	contrailClientSet, err := contrailClient.NewForConfig(config)
+	if err != nil {
+		return nil, nil, err
+	}
+	kubernetesClientSet, err := kubernetes.NewForConfig(config)
+	if err != nil {
+		return nil, nil, err
+	}
+	return contrailClientSet, kubernetesClientSet, nil
 }
 
-func cr(kind string) resource {
-	var cr resource
+type WatchEventHandler interface {
+	HandleEvent(eventType int, res *v1alpha1PB.Resource) error
+}
+
+var watchMu sync.Mutex
+var watchMap = map[C.uintptr_t]chan struct{}{}
+
+type sharedInformerFactory struct {
+	contrailSharedInformerFactory   contrailInformers.SharedInformerFactory
+	kubernetesSharedInformerFactory informers.SharedInformerFactory
+}
+
+func NewSharedInformerFactory(kubernetesClientSet *kubernetes.Clientset, contrailClientSet *contrailClient.Clientset, callbackFn C.uintptr_t, callbackContext C.uintptr_t) (*sharedInformerFactory, error) {
+	sif := &sharedInformerFactory{
+		contrailSharedInformerFactory:   contrailInformers.NewSharedInformerFactory(contrailClientSet, 10*time.Minute),
+		kubernetesSharedInformerFactory: informers.NewSharedInformerFactory(kubernetesClientSet, 10*time.Minute),
+	}
+	namespaceInformer := sif.kubernetesSharedInformerFactory.Core().V1().Namespaces()
+	namespaceInformer.Informer().AddEventHandler(resourceEventHandler("Namespace", &watchHandlerFunc{callbackFn, callbackContext}))
+
+	contrailResources, err := contrailClientSet.DiscoveryClient.ServerResourcesForGroupVersion("core.contrail.juniper.net/v1alpha1")
+	if err != nil {
+		return nil, err
+	}
+	for _, contrailResource := range contrailResources.APIResources {
+		addResourceEventHandler(contrailResource.Kind, sif.contrailSharedInformerFactory, callbackFn, callbackContext)
+	}
+	return sif, nil
+}
+
+func addResourceEventHandler(kind string, contrailSharedInformerFactory contrailInformers.SharedInformerFactory, callbackFn C.uintptr_t, callbackContext C.uintptr_t) {
 	switch kind {
 	case "VirtualNetwork":
-		res := &VirtualNetwork{}
-		cr = res
-	case "FloatingIP":
-		res := &FloatingIP{}
-		cr = res
-	case "RouteTarget":
-		res := &RouteTarget{}
-		cr = res
-	case "VirtualNetworkRouter":
-		res := &VirtualNetworkRouter{}
-		cr = res
-	case "FirewallPolicy":
-		res := &FirewallPolicy{}
-		cr = res
-	case "FirewallRule":
-		res := &FirewallRule{}
-		cr = res
-	case "GlobalVrouterConfig":
-		res := &GlobalVrouterConfig{}
-		cr = res
-	case "InstanceIP":
-		res := &InstanceIP{}
-		cr = res
-	case "TagType":
-		res := &TagType{}
-		cr = res
-	case "VirtualMachine":
-		res := &VirtualMachine{}
-		cr = res
-	case "AddressGroup":
-		res := &AddressGroup{}
-		cr = res
-	case "GlobalSystemConfig":
-		res := &GlobalSystemConfig{}
-		cr = res
-	case "Subnet":
-		res := &Subnet{}
-		cr = res
-	case "VirtualMachineInterface":
-		res := &VirtualMachineInterface{}
-		cr = res
-	case "BGPRouter":
-		res := &BGPRouter{}
-		cr = res
-	case "RoutingInstance":
-		res := &RoutingInstance{}
-		cr = res
-	case "Tag":
-		res := &Tag{}
-		cr = res
-	case "VirtualRouter":
-		res := &VirtualRouter{}
-		cr = res
-	case "ApplicationPolicySet":
-		res := &ApplicationPolicySet{}
-		cr = res
-	case "BGPAsAService":
-		res := &BGPAsAService{}
-		cr = res
+		informer := contrailSharedInformerFactory.Core().V1alpha1().VirtualNetworks()
+		informer.Informer().AddEventHandler(resourceEventHandler(kind, &watchHandlerFunc{callbackFn, callbackContext}))
+	}
+}
+
+type metaObj struct {
+	Kind string
+}
+
+func convert(kind string, obj interface{}) (*v1alpha1PB.Resource, error) {
+	var resource interface{}
+	switch kind {
+	case "VirtualNetwork":
+		resourceObj := obj.(*v1alpha1.VirtualNetwork)
+		resourceObj.Kind = kind
+		resource = resourceObj
 	case "Namespace":
-		res := &Namespace{}
-		cr = res
+		resourceObj := obj.(*v1.Namespace)
+		resourceObj.Kind = kind
+		resource = resourceObj
 	}
-	return cr
+	res, err := toResource(resource)
+	if err != nil {
+		return nil, err
+	}
+	return res, nil
 }
 
-func convertObject(o interface{}) (*v1alpha1PB.Resource, error) {
-	var resByte []byte
-	var err error
-	switch o := o.(type) {
-	case *v1alpha1.VirtualNetwork:
-		res := o
-		resByte, err = json.Marshal(res)
-		if err != nil {
-			return nil, err
-		}
-	case *v1alpha1.FloatingIP:
-		res := o
-		resByte, err = json.Marshal(res)
-		if err != nil {
-			return nil, err
-		}
-	case *v1alpha1.RouteTarget:
-		res := o
-		resByte, err = json.Marshal(res)
-		if err != nil {
-			return nil, err
-		}
-	case *v1alpha1.VirtualNetworkRouter:
-		res := o
-		resByte, err = json.Marshal(res)
-		if err != nil {
-			return nil, err
-		}
-	case *v1alpha1.FirewallPolicy:
-		res := o
-		resByte, err = json.Marshal(res)
-		if err != nil {
-			return nil, err
-		}
-	case *v1alpha1.FirewallRule:
-		res := o
-		resByte, err = json.Marshal(res)
-		if err != nil {
-			return nil, err
-		}
-	case *v1alpha1.GlobalVrouterConfig:
-		res := o
-		resByte, err = json.Marshal(res)
-		if err != nil {
-			return nil, err
-		}
-	case *v1alpha1.InstanceIP:
-		res := o
-		resByte, err = json.Marshal(res)
-		if err != nil {
-			return nil, err
-		}
-	case *v1alpha1.TagType:
-		res := o
-		resByte, err = json.Marshal(res)
-		if err != nil {
-			return nil, err
-		}
-	case *v1alpha1.VirtualMachine:
-		res := o
-		resByte, err = json.Marshal(res)
-		if err != nil {
-			return nil, err
-		}
-	case *v1alpha1.AddressGroup:
-		res := o
-		resByte, err = json.Marshal(res)
-		if err != nil {
-			return nil, err
-		}
-	case *v1alpha1.GlobalSystemConfig:
-		res := o
-		resByte, err = json.Marshal(res)
-		if err != nil {
-			return nil, err
-		}
-	case *v1alpha1.Subnet:
-		res := o
-		resByte, err = json.Marshal(res)
-		if err != nil {
-			return nil, err
-		}
-	case *v1alpha1.VirtualMachineInterface:
-		res := o
-		resByte, err = json.Marshal(res)
-		if err != nil {
-			return nil, err
-		}
-	case *v1alpha1.BGPRouter:
-		res := o
-		resByte, err = json.Marshal(res)
-		if err != nil {
-			return nil, err
-		}
-	case *v1alpha1.RoutingInstance:
-		res := o
-		resByte, err = json.Marshal(res)
-		if err != nil {
-			return nil, err
-		}
-	case *v1alpha1.Tag:
-		res := o
-		resByte, err = json.Marshal(res)
-		if err != nil {
-			return nil, err
-		}
-	case *v1alpha1.VirtualRouter:
-		res := o
-		resByte, err = json.Marshal(res)
-		if err != nil {
-			return nil, err
-		}
-	case *v1alpha1.ApplicationPolicySet:
-		res := o
-		resByte, err = json.Marshal(res)
-		if err != nil {
-			return nil, err
-		}
-	case *v1alpha1.BGPAsAService:
-		res := o
-		resByte, err = json.Marshal(res)
-		if err != nil {
-			return nil, err
-		}
-	case *v1.Namespace:
-		res := o
-		resByte, err = json.Marshal(res)
-		if err != nil {
-			return nil, err
-		}
-	default:
-		fmt.Println("resource unknown")
-		return nil, nil
+func toResource(obj interface{}) (*v1alpha1PB.Resource, error) {
+	objByte, err := json.Marshal(obj)
+	if err != nil {
+		return nil, err
 	}
-	return &v1alpha1PB.Resource{
-		Resource: resByte,
-	}, nil
+	res := &v1alpha1PB.Resource{
+		Resource: objByte,
+	}
+	return res, nil
+
 }
 
-//export client_list
-func client_list(clientsetKey C.uintptr_t, kind *C.char, ns *C.char, optsBytes unsafe.Pointer, optsSize C.int, oBytes *unsafe.Pointer, oSize *C.int) *C.char {
-	listOptions := metav1.ListOptions{}
-	listOptions.Unmarshal(no_copy_slice_from_c_array(optsBytes, optsSize))
-	kindString := C.GoString(kind)
-	objList, err := cr(kindString).objList(clientsetKey, C.GoString(ns), listOptions)
-	if err != nil {
-		return C.CString(err.Error())
+func resourceEventHandler(kind string, handler WatchEventHandler) cache.ResourceEventHandler {
+	return cache.ResourceEventHandlerFuncs{
+		AddFunc: func(obj interface{}) {
+			res, err := convert(kind, obj)
+			if err == nil {
+				handler.HandleEvent(Added, res)
+			}
+		},
+		UpdateFunc: func(oldObj interface{}, newObj interface{}) {
+			fmt.Println("update")
+			res, err := convert(kind, newObj)
+			if err == nil {
+				handler.HandleEvent(Modified, res)
+			}
+		},
+		DeleteFunc: func(obj interface{}) {
+			res, err := convert(kind, obj)
+			if err == nil {
+				handler.HandleEvent(Deleted, res)
+			}
+		},
 	}
-	resultProto, err := proto.Marshal(objList)
-	if err != nil {
-		return C.CString(err.Error())
-	}
-	*oBytes = C.CBytes(resultProto)
-	*oSize = C.int(len(resultProto))
-	return nil
+}
+
+func (s *sharedInformerFactory) start(stopCh chan struct{}) {
+	s.contrailSharedInformerFactory.Start(stopCh)
+	s.contrailSharedInformerFactory.WaitForCacheSync(stopCh)
+	s.kubernetesSharedInformerFactory.Start(stopCh)
+	s.kubernetesSharedInformerFactory.WaitForCacheSync(stopCh)
 }
 
 type watchHandlerFunc struct {
@@ -260,57 +171,28 @@ type watchHandlerFunc struct {
 	callbackContext C.uintptr_t
 }
 
-func (h *watchHandlerFunc) HandleEvent(eventType int, o interface{}) error {
-	res, err := convertObject(o)
+func (h *watchHandlerFunc) HandleEvent(eventType int, res *v1alpha1PB.Resource) error {
+	objProto, err := proto.Marshal(res)
 	if err != nil {
 		return err
 	}
-	if res != nil {
-		objProto, err := proto.Marshal(res)
-		if err != nil {
-			return err
-		}
-		objBytes := C.CBytes(objProto)
-		objSize := C.int(len(objProto))
-		C.client_watch_callback_wrapper(C.uintptr_t(h.callbackFn), C.uintptr_t(h.callbackContext), C.int(eventType), objBytes, objSize)
-		C.free(objBytes)
-	}
+	objBytes := C.CBytes(objProto)
+	objSize := C.int(len(objProto))
+	C.client_watch_callback_wrapper(C.uintptr_t(h.callbackFn), C.uintptr_t(h.callbackContext), C.int(eventType), objBytes, objSize)
+	C.free(objBytes)
+
 	return nil
 }
 
 //export client_watch
-func client_watch(clientsetKey C.uintptr_t, kind *C.char, ns *C.char, optsBytes unsafe.Pointer, optsSize C.int,
-	callbackFn C.uintptr_t, callbackContext C.uintptr_t) *C.char {
-	listOptions := metav1.ListOptions{}
-	listOptions.Unmarshal(no_copy_slice_from_c_array(optsBytes, optsSize))
-	listOptions.ResourceVersion = "0"
-
+func client_watch(callbackFn C.uintptr_t, callbackContext C.uintptr_t) *C.char {
+	contrailClientSet, kubernetesClientSet, _ := getClientSets()
+	stopCh := make(chan struct{})
+	sif, _ := NewSharedInformerFactory(kubernetesClientSet, contrailClientSet, callbackFn, callbackContext)
+	sif.start(stopCh)
 	watchMu.Lock()
 	defer watchMu.Unlock()
-	stopCh := make(chan struct{})
 	watchMap[callbackContext] = stopCh
-
-	kindString := C.GoString(kind)
-	namespaceString := C.GoString(ns)
-
-	go func(resourceType reflect.Type, whf *watchHandlerFunc, stopCh chan struct{}, kind string, clientsetKey C.uintptr_t, ns string, listOptions metav1.ListOptions) {
-		fmt.Println("1")
-		for {
-			watchInterface, err := cr(kind).objWatch(clientsetKey, ns, listOptions)
-			if err != nil {
-				klog.Errorf("cannot get watch interface %s, trying again in 5 seconds", err)
-				time.Sleep(5 * time.Second)
-			} else {
-				if _, err := watchHandler(watchInterface, resourceType, whf, stopCh); err != nil {
-					klog.Error("Watch handler stopped unexpectedly, restarting in 5 seconds")
-					time.Sleep(5 * time.Second)
-				}
-			}
-		}
-	}(cr(kindString).getType(), &watchHandlerFunc{callbackFn, callbackContext}, stopCh, kindString, clientsetKey, namespaceString, listOptions)
-
-	//go watchHandler(watch, cr(kind).getType(), &watchHandlerFunc{callbackFn, callbackContext}, stopCh)
-
 	return nil
 }
 
