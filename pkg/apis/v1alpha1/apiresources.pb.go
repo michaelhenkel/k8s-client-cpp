@@ -20,163 +20,6 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-type ApiResource struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	GroupVersion string  `protobuf:"bytes,1,opt,name=groupVersion,proto3" json:"groupVersion,omitempty"`
-	Kinds        []*Kind `protobuf:"bytes,2,rep,name=kinds,proto3" json:"kinds,omitempty"`
-}
-
-func (x *ApiResource) Reset() {
-	*x = ApiResource{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_apis_v1alpha1_apiresources_proto_msgTypes[0]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *ApiResource) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*ApiResource) ProtoMessage() {}
-
-func (x *ApiResource) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_apis_v1alpha1_apiresources_proto_msgTypes[0]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use ApiResource.ProtoReflect.Descriptor instead.
-func (*ApiResource) Descriptor() ([]byte, []int) {
-	return file_pkg_apis_v1alpha1_apiresources_proto_rawDescGZIP(), []int{0}
-}
-
-func (x *ApiResource) GetGroupVersion() string {
-	if x != nil {
-		return x.GroupVersion
-	}
-	return ""
-}
-
-func (x *ApiResource) GetKinds() []*Kind {
-	if x != nil {
-		return x.Kinds
-	}
-	return nil
-}
-
-type Kind struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	Name       string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	Namespaced bool   `protobuf:"varint,2,opt,name=namespaced,proto3" json:"namespaced,omitempty"`
-}
-
-func (x *Kind) Reset() {
-	*x = Kind{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_apis_v1alpha1_apiresources_proto_msgTypes[1]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *Kind) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*Kind) ProtoMessage() {}
-
-func (x *Kind) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_apis_v1alpha1_apiresources_proto_msgTypes[1]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use Kind.ProtoReflect.Descriptor instead.
-func (*Kind) Descriptor() ([]byte, []int) {
-	return file_pkg_apis_v1alpha1_apiresources_proto_rawDescGZIP(), []int{1}
-}
-
-func (x *Kind) GetName() string {
-	if x != nil {
-		return x.Name
-	}
-	return ""
-}
-
-func (x *Kind) GetNamespaced() bool {
-	if x != nil {
-		return x.Namespaced
-	}
-	return false
-}
-
-type Resources struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	Resources []*Resource `protobuf:"bytes,1,rep,name=resources,proto3" json:"resources,omitempty"`
-}
-
-func (x *Resources) Reset() {
-	*x = Resources{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_apis_v1alpha1_apiresources_proto_msgTypes[2]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *Resources) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*Resources) ProtoMessage() {}
-
-func (x *Resources) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_apis_v1alpha1_apiresources_proto_msgTypes[2]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use Resources.ProtoReflect.Descriptor instead.
-func (*Resources) Descriptor() ([]byte, []int) {
-	return file_pkg_apis_v1alpha1_apiresources_proto_rawDescGZIP(), []int{2}
-}
-
-func (x *Resources) GetResources() []*Resource {
-	if x != nil {
-		return x.Resources
-	}
-	return nil
-}
-
 type Resource struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -188,7 +31,7 @@ type Resource struct {
 func (x *Resource) Reset() {
 	*x = Resource{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_pkg_apis_v1alpha1_apiresources_proto_msgTypes[3]
+		mi := &file_pkg_apis_v1alpha1_apiresources_proto_msgTypes[0]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -201,7 +44,7 @@ func (x *Resource) String() string {
 func (*Resource) ProtoMessage() {}
 
 func (x *Resource) ProtoReflect() protoreflect.Message {
-	mi := &file_pkg_apis_v1alpha1_apiresources_proto_msgTypes[3]
+	mi := &file_pkg_apis_v1alpha1_apiresources_proto_msgTypes[0]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -214,7 +57,7 @@ func (x *Resource) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Resource.ProtoReflect.Descriptor instead.
 func (*Resource) Descriptor() ([]byte, []int) {
-	return file_pkg_apis_v1alpha1_apiresources_proto_rawDescGZIP(), []int{3}
+	return file_pkg_apis_v1alpha1_apiresources_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *Resource) GetResource() []byte {
@@ -230,27 +73,13 @@ var file_pkg_apis_v1alpha1_apiresources_proto_rawDesc = []byte{
 	0x0a, 0x24, 0x70, 0x6b, 0x67, 0x2f, 0x61, 0x70, 0x69, 0x73, 0x2f, 0x76, 0x31, 0x61, 0x6c, 0x70,
 	0x68, 0x61, 0x31, 0x2f, 0x61, 0x70, 0x69, 0x72, 0x65, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x73,
 	0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x12, 0x08, 0x76, 0x31, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x31,
-	0x22, 0x57, 0x0a, 0x0b, 0x41, 0x70, 0x69, 0x52, 0x65, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x12,
-	0x22, 0x0a, 0x0c, 0x67, 0x72, 0x6f, 0x75, 0x70, 0x56, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x18,
-	0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0c, 0x67, 0x72, 0x6f, 0x75, 0x70, 0x56, 0x65, 0x72, 0x73,
-	0x69, 0x6f, 0x6e, 0x12, 0x24, 0x0a, 0x05, 0x6b, 0x69, 0x6e, 0x64, 0x73, 0x18, 0x02, 0x20, 0x03,
-	0x28, 0x0b, 0x32, 0x0e, 0x2e, 0x76, 0x31, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x31, 0x2e, 0x4b, 0x69,
-	0x6e, 0x64, 0x52, 0x05, 0x6b, 0x69, 0x6e, 0x64, 0x73, 0x22, 0x3a, 0x0a, 0x04, 0x4b, 0x69, 0x6e,
-	0x64, 0x12, 0x12, 0x0a, 0x04, 0x6e, 0x61, 0x6d, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52,
-	0x04, 0x6e, 0x61, 0x6d, 0x65, 0x12, 0x1e, 0x0a, 0x0a, 0x6e, 0x61, 0x6d, 0x65, 0x73, 0x70, 0x61,
-	0x63, 0x65, 0x64, 0x18, 0x02, 0x20, 0x01, 0x28, 0x08, 0x52, 0x0a, 0x6e, 0x61, 0x6d, 0x65, 0x73,
-	0x70, 0x61, 0x63, 0x65, 0x64, 0x22, 0x3d, 0x0a, 0x09, 0x52, 0x65, 0x73, 0x6f, 0x75, 0x72, 0x63,
-	0x65, 0x73, 0x12, 0x30, 0x0a, 0x09, 0x72, 0x65, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x73, 0x18,
-	0x01, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x12, 0x2e, 0x76, 0x31, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x31,
-	0x2e, 0x52, 0x65, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x52, 0x09, 0x72, 0x65, 0x73, 0x6f, 0x75,
-	0x72, 0x63, 0x65, 0x73, 0x22, 0x26, 0x0a, 0x08, 0x52, 0x65, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65,
-	0x12, 0x1a, 0x0a, 0x08, 0x72, 0x65, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x18, 0x01, 0x20, 0x01,
-	0x28, 0x0c, 0x52, 0x08, 0x72, 0x65, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x42, 0x3b, 0x5a, 0x39,
-	0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x6d, 0x69, 0x63, 0x68, 0x61,
-	0x65, 0x6c, 0x68, 0x65, 0x6e, 0x6b, 0x65, 0x6c, 0x2f, 0x6b, 0x38, 0x73, 0x2d, 0x63, 0x6c, 0x69,
-	0x65, 0x6e, 0x74, 0x2d, 0x63, 0x70, 0x70, 0x2f, 0x70, 0x6b, 0x67, 0x2f, 0x61, 0x70, 0x69, 0x73,
-	0x2f, 0x76, 0x31, 0x61, 0x6c, 0x70, 0x68, 0x61, 0x31, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f,
-	0x33,
+	0x22, 0x26, 0x0a, 0x08, 0x52, 0x65, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x12, 0x1a, 0x0a, 0x08,
+	0x72, 0x65, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x08,
+	0x72, 0x65, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x42, 0x3b, 0x5a, 0x39, 0x67, 0x69, 0x74, 0x68,
+	0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x6d, 0x69, 0x63, 0x68, 0x61, 0x65, 0x6c, 0x68, 0x65,
+	0x6e, 0x6b, 0x65, 0x6c, 0x2f, 0x6b, 0x38, 0x73, 0x2d, 0x63, 0x6c, 0x69, 0x65, 0x6e, 0x74, 0x2d,
+	0x63, 0x70, 0x70, 0x2f, 0x70, 0x6b, 0x67, 0x2f, 0x61, 0x70, 0x69, 0x73, 0x2f, 0x76, 0x31, 0x61,
+	0x6c, 0x70, 0x68, 0x61, 0x31, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -265,21 +94,16 @@ func file_pkg_apis_v1alpha1_apiresources_proto_rawDescGZIP() []byte {
 	return file_pkg_apis_v1alpha1_apiresources_proto_rawDescData
 }
 
-var file_pkg_apis_v1alpha1_apiresources_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
+var file_pkg_apis_v1alpha1_apiresources_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
 var file_pkg_apis_v1alpha1_apiresources_proto_goTypes = []interface{}{
-	(*ApiResource)(nil), // 0: v1alpha1.ApiResource
-	(*Kind)(nil),        // 1: v1alpha1.Kind
-	(*Resources)(nil),   // 2: v1alpha1.Resources
-	(*Resource)(nil),    // 3: v1alpha1.Resource
+	(*Resource)(nil), // 0: v1alpha1.Resource
 }
 var file_pkg_apis_v1alpha1_apiresources_proto_depIdxs = []int32{
-	1, // 0: v1alpha1.ApiResource.kinds:type_name -> v1alpha1.Kind
-	3, // 1: v1alpha1.Resources.resources:type_name -> v1alpha1.Resource
-	2, // [2:2] is the sub-list for method output_type
-	2, // [2:2] is the sub-list for method input_type
-	2, // [2:2] is the sub-list for extension type_name
-	2, // [2:2] is the sub-list for extension extendee
-	0, // [0:2] is the sub-list for field type_name
+	0, // [0:0] is the sub-list for method output_type
+	0, // [0:0] is the sub-list for method input_type
+	0, // [0:0] is the sub-list for extension type_name
+	0, // [0:0] is the sub-list for extension extendee
+	0, // [0:0] is the sub-list for field type_name
 }
 
 func init() { file_pkg_apis_v1alpha1_apiresources_proto_init() }
@@ -289,42 +113,6 @@ func file_pkg_apis_v1alpha1_apiresources_proto_init() {
 	}
 	if !protoimpl.UnsafeEnabled {
 		file_pkg_apis_v1alpha1_apiresources_proto_msgTypes[0].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ApiResource); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_pkg_apis_v1alpha1_apiresources_proto_msgTypes[1].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*Kind); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_pkg_apis_v1alpha1_apiresources_proto_msgTypes[2].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*Resources); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_pkg_apis_v1alpha1_apiresources_proto_msgTypes[3].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*Resource); i {
 			case 0:
 				return &v.state
@@ -343,7 +131,7 @@ func file_pkg_apis_v1alpha1_apiresources_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_pkg_apis_v1alpha1_apiresources_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   4,
+			NumMessages:   1,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

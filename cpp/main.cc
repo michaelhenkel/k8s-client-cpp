@@ -50,19 +50,13 @@ uintptr_t Watch(CallbackFn callback) {
 
 void Start(WatchCallbackFn callbackFn){
     WatchCallbackFn cbFn = callbackFn;
-    Watch([cbFn](int watchType, const v1alpha1::Resource* resource){
-		//printf("resource %s\n", resource->resource().c_str());
-		
+    Watch([cbFn](int watchType, const v1alpha1::Resource* resource){		
         Document d;
        	d.Parse(resource->resource().c_str());
         cbFn(watchType, &d);
 		
     });
 };
-
-
-
-
 
 int main()
 {

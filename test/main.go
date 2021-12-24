@@ -44,13 +44,13 @@ func main() {
 	}
 
 	var gvrList []schema.GroupVersionResource
-	/*
-		gvrList = append(gvrList, schema.GroupVersionResource{
-			Group:    "",
-			Version:  "v1",
-			Resource: "namespaces",
-		})
-	*/
+
+	gvrList = append(gvrList, schema.GroupVersionResource{
+		Group:    "",
+		Version:  "v1",
+		Resource: "namespaces",
+	})
+
 	contrailResources, err := contrailClientSet.DiscoveryClient.ServerResourcesForGroupVersion("core.contrail.juniper.net/v1alpha1")
 	if err != nil {
 		log.Fatalln(err)
@@ -65,12 +65,9 @@ func main() {
 	}
 	factory := dynamicinformer.NewDynamicSharedInformerFactory(clusterClient, 10*time.Minute)
 
-	//var sifList []dynamicinformer.DynamicSharedInformerFactory
 	for _, gvr := range gvrList {
-		//factory := dynamicinformer.NewDynamicSharedInformerFactory(clusterClient, 10*time.Minute)
 		informer := factory.ForResource(gvr).Informer()
 		informer.AddEventHandler(resourceEventHandler())
-		//sifList = append(sifList, factory)
 	}
 	var stop = make(chan bool)
 

@@ -68,5 +68,6 @@
         "vector": "cpp",
         "memory_resource": "cpp",
         "__functional_03": "cpp"
-    }
+    },
+    "C_Cpp.errorSquiggles": "Disabled"
 }
