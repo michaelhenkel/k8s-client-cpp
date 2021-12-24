@@ -22,7 +22,7 @@ void cbFn(int watchType, rapidjson::Document* d)
 	Value::MemberIterator md = d->FindMember("metadata");
 	Value::MemberIterator md_name = md->value.FindMember("name");
 	Value::MemberIterator knd = d->FindMember("kind");
-	Value::MemberIterator rv = md->value.FindMember("resourceversion");
+	Value::MemberIterator rv = md->value.FindMember("resourceVersion");
 	printf("watchType: %d, kind: %s,  name: %s, rv: %s\n", watchType, knd->value.GetString(), md_name->value.GetString(), rv->value.GetString());
 }
 

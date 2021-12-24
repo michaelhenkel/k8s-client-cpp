@@ -74,28 +74,26 @@ var watchMu sync.Mutex
 var watchMap = map[C.uintptr_t]chan struct{}{}
 
 func NewSharedInformerFactory(kubernetesClientSet *kubernetes.Clientset, contrailClientSet *contrailClient.Clientset, dynamicClientSet dynamic.Interface, callbackFn C.uintptr_t, callbackContext C.uintptr_t) (dynamicinformer.DynamicSharedInformerFactory, error) {
-
-	sif := dynamicinformer.NewDynamicSharedInformerFactory(dynamicClientSet, time.Minute*10)
-
-	namespaceGVR := schema.GroupVersionResource{
+	var gvrList []schema.GroupVersionResource
+	gvrList = append(gvrList, schema.GroupVersionResource{
 		Group:    "",
 		Version:  "v1",
 		Resource: "namespaces",
-	}
-	namespaceInformer := sif.ForResource(namespaceGVR)
-	namespaceInformer.Informer().AddEventHandler(resourceEventHandler(&watchHandlerFunc{callbackFn, callbackContext}))
-
+	})
 	contrailResources, err := contrailClientSet.DiscoveryClient.ServerResourcesForGroupVersion("core.contrail.juniper.net/v1alpha1")
 	if err != nil {
 		return nil, err
 	}
 	for _, contrailResource := range contrailResources.APIResources {
 		resourceNameList := strings.Split(contrailResource.Name, "/status")
-		gvr := schema.GroupVersionResource{
+		gvrList = append(gvrList, schema.GroupVersionResource{
 			Group:    "core.contrail.juniper.net",
 			Version:  "v1alpha1",
 			Resource: resourceNameList[0],
-		}
+		})
+	}
+	sif := dynamicinformer.NewDynamicSharedInformerFactory(dynamicClientSet, time.Minute*10)
+	for _, gvr := range gvrList {
 		dynamicInformer := sif.ForResource(gvr)
 		dynamicInformer.Informer().AddEventHandler(resourceEventHandler(&watchHandlerFunc{callbackFn, callbackContext}))
 	}
@@ -123,14 +121,54 @@ func convert(obj interface{}) (*v1alpha1PB.Resource, error) {
 func resourceEventHandler(handler WatchEventHandler) cache.ResourceEventHandler {
 	return cache.ResourceEventHandlerFuncs{
 		AddFunc: func(obj interface{}) {
-			fmt.Println("add")
+			u := obj.(*unstructured.Unstructured)
+			name, namefound, err := unstructured.NestedString(u.Object, "metadata", "name")
+			if err != nil {
+				fmt.Println(err)
+			}
+
+			rv, rvfound, err := unstructured.NestedString(u.Object, "metadata", "resourceVersion")
+			if err != nil {
+				fmt.Println(err)
+			}
+
+			kind, kindfound, err := unstructured.NestedString(u.Object, "kind")
+			if err != nil {
+				fmt.Println(err)
+			}
+			if namefound && kindfound && rvfound {
+				fmt.Println("add", kind, name, rv)
+			}
 			res, err := convert(obj)
 			if err == nil {
 				handler.HandleEvent(Added, res)
 			}
 		},
 		UpdateFunc: func(oldObj interface{}, newObj interface{}) {
-			fmt.Println("update")
+			uold := oldObj.(*unstructured.Unstructured)
+			u := newObj.(*unstructured.Unstructured)
+			name, namefound, err := unstructured.NestedString(u.Object, "metadata", "name")
+			if err != nil {
+				fmt.Println(err)
+			}
+
+			rv, rvfound, err := unstructured.NestedString(u.Object, "metadata", "resourceVersion")
+			if err != nil {
+				fmt.Println(err)
+			}
+
+			oldrv, oldrvfound, err := unstructured.NestedString(uold.Object, "metadata", "resourceVersion")
+			if err != nil {
+				fmt.Println(err)
+			}
+
+			kind, kindfound, err := unstructured.NestedString(u.Object, "kind")
+			if err != nil {
+				fmt.Println(err)
+			}
+			if namefound && kindfound && rvfound && oldrvfound {
+				fmt.Println("update", kind, name, rv, oldrv)
+			}
 			res, err := convert(newObj)
 			if err == nil {
 				handler.HandleEvent(Modified, res)
@@ -168,8 +206,10 @@ func client_watch(callbackFn C.uintptr_t, callbackContext C.uintptr_t) *C.char {
 	contrailClientSet, kubernetesClientSet, dynamicClientSet, _ := getClientSets()
 	stopCh := make(chan struct{})
 	sif, _ := NewSharedInformerFactory(kubernetesClientSet, contrailClientSet, dynamicClientSet, callbackFn, callbackContext)
+
 	sif.Start(stopCh)
 	sif.WaitForCacheSync(stopCh)
+
 	watchMu.Lock()
 	defer watchMu.Unlock()
 	watchMap[callbackContext] = stopCh
