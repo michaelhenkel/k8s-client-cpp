@@ -4,7 +4,6 @@ go 1.16
 
 require (
 	github.com/emicklei/go-restful v2.10.0+incompatible // indirect
-	github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b
 	github.com/golang/snappy v0.0.2 // indirect
 	github.com/imdario/mergo v0.3.11 // indirect
 	github.com/kr/text v0.2.0 // indirect
@@ -18,7 +17,7 @@ require (
 	k8s.io/api v0.21.0
 	k8s.io/apimachinery v0.21.0
 	k8s.io/client-go v0.21.0
-	k8s.io/klog v1.0.0 // indirect
+	k8s.io/klog v1.0.0
 	k8s.io/klog/v2 v2.10.0 // indirect
 	ssd-git.juniper.net/contrail/cn2/contrail v0.0.0-00010101000000-000000000000
 )
