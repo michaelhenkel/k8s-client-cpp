@@ -6,7 +6,3 @@ package main
 // 	((client_watch_callback_fn)callbackFn)(callbackContext, watchType, objBytes, objSize);
 // }
 import "C"
-
-func bla() {
-
-}

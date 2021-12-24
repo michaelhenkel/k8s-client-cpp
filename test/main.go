@@ -1,103 +1,75 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
+	"log"
+	"path/filepath"
 	"time"
 
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/wait"
-	"k8s.io/client-go/informers"
-	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/dynamic"
+	"k8s.io/client-go/dynamic/dynamicinformer"
+	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/tools/clientcmd"
-	contrailClient "ssd-git.juniper.net/contrail/cn2/contrail/pkg/client/clientset_generated/clientset"
-	contrailInformers "ssd-git.juniper.net/contrail/cn2/contrail/pkg/client/informers_generated/externalversions"
+	"k8s.io/client-go/util/homedir"
 )
 
 func main() {
-	config, err := clientcmd.BuildConfigFromFlags("", "/Users/mhenkel/.kube/config")
+	var err error
+	var kconfig string
+	config, _ := rest.InClusterConfig()
+	if config == nil {
+		if home := homedir.HomeDir(); home != "" {
+			kconfig = filepath.Join(home, ".kube", "config")
+		}
+		config, err = clientcmd.BuildConfigFromFlags("", kconfig)
+		if err != nil {
+			fmt.Println(err)
+		}
+	}
+
+	clusterClient, err := dynamic.NewForConfig(config)
 	if err != nil {
-		fmt.Println(err)
+		log.Fatalln(err)
 	}
 
-	clientset, err := kubernetes.NewForConfig(config)
-	if err != nil {
-		fmt.Println(err)
-	}
+	factory := dynamicinformer.NewDynamicSharedInformerFactory(clusterClient, time.Minute)
 
-	cn2Clientset, err := contrailClient.NewForConfig(config)
-	if err != nil {
-		fmt.Println(err)
-	}
-
-	sif, err := NewSharedInformerFactory(clientset, cn2Clientset)
-	if err != nil {
-		fmt.Println(err)
-	}
-	sif.start()
-	//
-
-	//kubeFactory := informers.NewSharedInformerFactory(clientset, 10*time.Minute)
-
-}
-
-type sharedInformerFactory struct {
-	contrailSharedInformerFactory   contrailInformers.SharedInformerFactory
-	kubernetesSharedInformerFactory informers.SharedInformerFactory
-}
-
-func (s *sharedInformerFactory) start() {
-	stopCh := make(chan struct{})
-	go func() {
-		s.contrailSharedInformerFactory.Start(wait.NeverStop)
-		s.contrailSharedInformerFactory.WaitForCacheSync(wait.NeverStop)
-		s.kubernetesSharedInformerFactory.Start(wait.NeverStop)
-		s.kubernetesSharedInformerFactory.WaitForCacheSync(wait.NeverStop)
-	}()
-	<-stopCh
-}
-
-func NewSharedInformerFactory(kubernetesClientSet *kubernetes.Clientset, contrailClientSet *contrailClient.Clientset) (*sharedInformerFactory, error) {
-	sif := &sharedInformerFactory{
-		contrailSharedInformerFactory:   contrailInformers.NewSharedInformerFactory(contrailClientSet, 10*time.Minute),
-		kubernetesSharedInformerFactory: informers.NewSharedInformerFactory(kubernetesClientSet, 10*time.Minute),
-	}
-	namespaceInformer := sif.kubernetesSharedInformerFactory.Core().V1().Namespaces()
-	namespaceInformer.Informer().AddEventHandler(resourceEventHandler())
-
-	contrailResources, err := contrailClientSet.DiscoveryClient.ServerResourcesForGroupVersion("core.contrail.juniper.net/v1alpha1")
-	if err != nil {
-		return nil, err
-	}
-	for _, contrailResource := range contrailResources.APIResources {
-		addResourceEventHandler(contrailResource.Kind, sif.contrailSharedInformerFactory)
-	}
-	return sif, nil
-}
-
-func addResourceEventHandler(kind string, contrailSharedInformerFactory contrailInformers.SharedInformerFactory) {
-	switch kind {
-	case "VirtualNetwork":
-		contrailSharedInformerFactory.Core().V1alpha1().VirtualNetworks()
-	}
-}
-
-func resourceEventHandler(whf watchHandlerFunc) cache.ResourceEventHandler {
-	return cache.ResourceEventHandlerFuncs{
+	namespaceResource := schema.GroupVersionResource{Group: "", Version: "v1", Resource: "namespaces"}
+	namespaceInformer := factory.ForResource(namespaceResource).Informer()
+	namespaceInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc: func(obj interface{}) {
-			objByte, _ := json.Marshal(obj)
-			fmt.Printf("got add %s\n", string(objByte))
+			u := obj.(*unstructured.Unstructured)
+			fmt.Println(u)
 		},
-		UpdateFunc: func(oldObj interface{}, newObj interface{}) {
-			fmt.Println("got update")
+		UpdateFunc: func(oldObj, newObj interface{}) {
+			u := newObj.(*unstructured.Unstructured)
+			fmt.Println(u)
 		},
-		DeleteFunc: func(obj interface{}) {
-			fmt.Println("got delete")
-		},
-	}
-}
+		DeleteFunc: func(obj interface{}) {},
+	})
 
-type watchHandlerFunc struct {
-	callbackFn func()
-	//callbackContext C.uintptr_t
+	vnResource := schema.GroupVersionResource{Group: "core.contrail.juniper.net", Version: "v1alpha1", Resource: "virtualnetworks"}
+	vnInformer := factory.ForResource(vnResource).Informer()
+	vnInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
+		AddFunc: func(obj interface{}) {
+			u := obj.(*unstructured.Unstructured)
+			fmt.Println(u)
+		},
+		UpdateFunc: func(oldObj, newObj interface{}) {
+			u := newObj.(*unstructured.Unstructured)
+			fmt.Println(u)
+		},
+		DeleteFunc: func(obj interface{}) {},
+	})
+	var stop = make(chan bool)
+	go func() {
+		factory.Start(wait.NeverStop)
+		factory.WaitForCacheSync(wait.NeverStop)
+	}()
+	<-stop
+
 }

@@ -22,7 +22,8 @@ void cbFn(int watchType, rapidjson::Document* d)
 	Value::MemberIterator md = d->FindMember("metadata");
 	Value::MemberIterator md_name = md->value.FindMember("name");
 	Value::MemberIterator knd = d->FindMember("kind");
-	printf("watchType: %d, kind: %s,  name: %s\n", watchType, knd->value.GetString(), md_name->value.GetString());
+	Value::MemberIterator rv = md->value.FindMember("resourceversion");
+	printf("watchType: %d, kind: %s,  name: %s, rv: %s\n", watchType, knd->value.GetString(), md_name->value.GetString(), rv->value.GetString());
 }
 
 typedef std::function<void(int watchType, rapidjson::Document* d)> WatchCallbackFn;

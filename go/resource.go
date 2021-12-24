@@ -4,28 +4,28 @@ import (
 	"encoding/json"
 	"fmt"
 	"path/filepath"
+	"strings"
 	"sync"
 	"time"
 
 	v1alpha1PB "github.com/michaelhenkel/k8s-client-cpp/pkg/apis/v1alpha1"
 	"google.golang.org/protobuf/proto"
-	v1 "k8s.io/api/core/v1"
-	"k8s.io/client-go/informers"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/client-go/dynamic"
+	"k8s.io/client-go/dynamic/dynamicinformer"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/util/homedir"
-	v1alpha1 "ssd-git.juniper.net/contrail/cn2/contrail/pkg/apis/core/v1alpha1"
 	contrailClient "ssd-git.juniper.net/contrail/cn2/contrail/pkg/client/clientset_generated/clientset"
-	contrailInformers "ssd-git.juniper.net/contrail/cn2/contrail/pkg/client/informers_generated/externalversions"
 )
 
 // #include <stdlib.h>
 // #include <stdint.h>
 // typedef void (*client_watch_callback_fn)(uintptr_t watchKey, int watchType, void* objBytes, int objSize);
 // extern void client_watch_callback_wrapper(uintptr_t callbackFn, uintptr_t callbackContext, int watchType, void* objBytes, int objSize);
-
 import "C"
 
 const (
@@ -36,8 +36,7 @@ const (
 	Error    = -1
 )
 
-func getClientSets() (*contrailClient.Clientset, *kubernetes.Clientset, error) {
-	bla()
+func getClientSets() (*contrailClient.Clientset, *kubernetes.Clientset, dynamic.Interface, error) {
 	var err error
 	var kconfig string
 	config, _ := rest.InClusterConfig()
@@ -47,19 +46,24 @@ func getClientSets() (*contrailClient.Clientset, *kubernetes.Clientset, error) {
 		}
 		config, err = clientcmd.BuildConfigFromFlags("", kconfig)
 		if err != nil {
-			return nil, nil, err
+			return nil, nil, nil, err
 		}
 	}
 
 	contrailClientSet, err := contrailClient.NewForConfig(config)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 	kubernetesClientSet, err := kubernetes.NewForConfig(config)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
-	return contrailClientSet, kubernetesClientSet, nil
+
+	dynamicClientSet, err := dynamic.NewForConfig(config)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	return contrailClientSet, kubernetesClientSet, dynamicClientSet, nil
 }
 
 type WatchEventHandler interface {
@@ -69,101 +73,76 @@ type WatchEventHandler interface {
 var watchMu sync.Mutex
 var watchMap = map[C.uintptr_t]chan struct{}{}
 
-type sharedInformerFactory struct {
-	contrailSharedInformerFactory   contrailInformers.SharedInformerFactory
-	kubernetesSharedInformerFactory informers.SharedInformerFactory
-}
+func NewSharedInformerFactory(kubernetesClientSet *kubernetes.Clientset, contrailClientSet *contrailClient.Clientset, dynamicClientSet dynamic.Interface, callbackFn C.uintptr_t, callbackContext C.uintptr_t) (dynamicinformer.DynamicSharedInformerFactory, error) {
 
-func NewSharedInformerFactory(kubernetesClientSet *kubernetes.Clientset, contrailClientSet *contrailClient.Clientset, callbackFn C.uintptr_t, callbackContext C.uintptr_t) (*sharedInformerFactory, error) {
-	sif := &sharedInformerFactory{
-		contrailSharedInformerFactory:   contrailInformers.NewSharedInformerFactory(contrailClientSet, 10*time.Minute),
-		kubernetesSharedInformerFactory: informers.NewSharedInformerFactory(kubernetesClientSet, 10*time.Minute),
+	sif := dynamicinformer.NewDynamicSharedInformerFactory(dynamicClientSet, time.Minute*10)
+
+	namespaceGVR := schema.GroupVersionResource{
+		Group:    "",
+		Version:  "v1",
+		Resource: "namespaces",
 	}
-	namespaceInformer := sif.kubernetesSharedInformerFactory.Core().V1().Namespaces()
-	namespaceInformer.Informer().AddEventHandler(resourceEventHandler("Namespace", &watchHandlerFunc{callbackFn, callbackContext}))
+	namespaceInformer := sif.ForResource(namespaceGVR)
+	namespaceInformer.Informer().AddEventHandler(resourceEventHandler(&watchHandlerFunc{callbackFn, callbackContext}))
 
 	contrailResources, err := contrailClientSet.DiscoveryClient.ServerResourcesForGroupVersion("core.contrail.juniper.net/v1alpha1")
 	if err != nil {
 		return nil, err
 	}
 	for _, contrailResource := range contrailResources.APIResources {
-		addResourceEventHandler(contrailResource.Kind, sif.contrailSharedInformerFactory, callbackFn, callbackContext)
+		resourceNameList := strings.Split(contrailResource.Name, "/status")
+		gvr := schema.GroupVersionResource{
+			Group:    "core.contrail.juniper.net",
+			Version:  "v1alpha1",
+			Resource: resourceNameList[0],
+		}
+		dynamicInformer := sif.ForResource(gvr)
+		dynamicInformer.Informer().AddEventHandler(resourceEventHandler(&watchHandlerFunc{callbackFn, callbackContext}))
 	}
+
 	return sif, nil
 }
 
-func addResourceEventHandler(kind string, contrailSharedInformerFactory contrailInformers.SharedInformerFactory, callbackFn C.uintptr_t, callbackContext C.uintptr_t) {
-	switch kind {
-	case "VirtualNetwork":
-		informer := contrailSharedInformerFactory.Core().V1alpha1().VirtualNetworks()
-		informer.Informer().AddEventHandler(resourceEventHandler(kind, &watchHandlerFunc{callbackFn, callbackContext}))
+func convert(obj interface{}) (*v1alpha1PB.Resource, error) {
+	switch k := obj.(type) {
+	case *unstructured.Unstructured:
+		objByte, err := json.Marshal(k)
+		if err != nil {
+			return nil, err
+		}
+		res := &v1alpha1PB.Resource{
+			Resource: objByte,
+		}
+		return res, nil
+	default:
+		fmt.Println("resource unkown")
+		return nil, fmt.Errorf("")
 	}
 }
 
-type metaObj struct {
-	Kind string
-}
-
-func convert(kind string, obj interface{}) (*v1alpha1PB.Resource, error) {
-	var resource interface{}
-	switch kind {
-	case "VirtualNetwork":
-		resourceObj := obj.(*v1alpha1.VirtualNetwork)
-		resourceObj.Kind = kind
-		resource = resourceObj
-	case "Namespace":
-		resourceObj := obj.(*v1.Namespace)
-		resourceObj.Kind = kind
-		resource = resourceObj
-	}
-	res, err := toResource(resource)
-	if err != nil {
-		return nil, err
-	}
-	return res, nil
-}
-
-func toResource(obj interface{}) (*v1alpha1PB.Resource, error) {
-	objByte, err := json.Marshal(obj)
-	if err != nil {
-		return nil, err
-	}
-	res := &v1alpha1PB.Resource{
-		Resource: objByte,
-	}
-	return res, nil
-
-}
-
-func resourceEventHandler(kind string, handler WatchEventHandler) cache.ResourceEventHandler {
+func resourceEventHandler(handler WatchEventHandler) cache.ResourceEventHandler {
 	return cache.ResourceEventHandlerFuncs{
 		AddFunc: func(obj interface{}) {
-			res, err := convert(kind, obj)
+			fmt.Println("add")
+			res, err := convert(obj)
 			if err == nil {
 				handler.HandleEvent(Added, res)
 			}
 		},
 		UpdateFunc: func(oldObj interface{}, newObj interface{}) {
 			fmt.Println("update")
-			res, err := convert(kind, newObj)
+			res, err := convert(newObj)
 			if err == nil {
 				handler.HandleEvent(Modified, res)
 			}
 		},
 		DeleteFunc: func(obj interface{}) {
-			res, err := convert(kind, obj)
+			res, err := convert(obj)
 			if err == nil {
 				handler.HandleEvent(Deleted, res)
 			}
 		},
 	}
-}
-
-func (s *sharedInformerFactory) start(stopCh chan struct{}) {
-	s.contrailSharedInformerFactory.Start(stopCh)
-	s.contrailSharedInformerFactory.WaitForCacheSync(stopCh)
-	s.kubernetesSharedInformerFactory.Start(stopCh)
-	s.kubernetesSharedInformerFactory.WaitForCacheSync(stopCh)
 }
 
 type watchHandlerFunc struct {
@@ -186,10 +165,11 @@ func (h *watchHandlerFunc) HandleEvent(eventType int, res *v1alpha1PB.Resource) 
 
 //export client_watch
 func client_watch(callbackFn C.uintptr_t, callbackContext C.uintptr_t) *C.char {
-	contrailClientSet, kubernetesClientSet, _ := getClientSets()
+	contrailClientSet, kubernetesClientSet, dynamicClientSet, _ := getClientSets()
 	stopCh := make(chan struct{})
-	sif, _ := NewSharedInformerFactory(kubernetesClientSet, contrailClientSet, callbackFn, callbackContext)
-	sif.start(stopCh)
+	sif, _ := NewSharedInformerFactory(kubernetesClientSet, contrailClientSet, dynamicClientSet, callbackFn, callbackContext)
+	sif.Start(stopCh)
+	sif.WaitForCacheSync(stopCh)
 	watchMu.Lock()
 	defer watchMu.Unlock()
 	watchMap[callbackContext] = stopCh
