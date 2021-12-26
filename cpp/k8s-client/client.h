@@ -31,6 +31,9 @@ public:
 		
         });           
     };
+	void Stop(){
+		auto ret = client_stop_watch(watch);
+	};
 private:
 	uintptr_t watch;
 	WatchCallbackFn callbackFn;

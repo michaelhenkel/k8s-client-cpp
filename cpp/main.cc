@@ -31,6 +31,10 @@ int main()
 {
 	K8SClient k8sclient = K8SClient(cbFn);
 	k8sclient.Watch();
+	std::this_thread::sleep_for(std::chrono::seconds(10));
+	k8sclient.Stop();
+	std::this_thread::sleep_for(std::chrono::seconds(3));
+	k8sclient.Watch();
 	while(1){};
 	return 0;
 }
