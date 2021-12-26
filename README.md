@@ -2,14 +2,13 @@ This is a incomplete experimentation of creating a C++ binding of Kubernetes go 
 
 ##### Environment
 Go
-C++ 14
+C++ 11
 protobuf
 
 ##### clone the code
 ``` bash
 git clone https://github.com/michaelhenkel/k8s-client-cpp
 ```
-
 *Note: All blocks below must be executed from the root of the repository.*
 
 ##### get the dependencies

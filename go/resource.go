@@ -210,10 +210,8 @@ func client_watch(callbackFn C.uintptr_t, callbackContext C.uintptr_t) *C.char {
 	sifList, _ := NewSharedInformerFactory(kubernetesClientSet, contrailClientSet, dynamicClientSet, callbackFn, callbackContext)
 
 	for _, sif := range sifList{
-		go func(){
-			sif.Start(stopCh)
-			sif.WaitForCacheSync(stopCh)
-		}()
+		sif.Start(stopCh)
+		sif.WaitForCacheSync(stopCh)
 	}
 	watchMu.Lock()
 	defer watchMu.Unlock()

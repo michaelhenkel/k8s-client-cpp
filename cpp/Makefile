@@ -1,6 +1,6 @@
 # Declaration of variables
 CC = g++
-CC_FLAGS = -I . -std=c++14
+CC_FLAGS = -I . -std=c++11
 #LD_FLAGS = ../go/go.a -lprotobuf -lpthread
 LD_FLAGS = ../go/go.a -lprotobuf -lpthread -framework CoreFoundation -framework Security
  
