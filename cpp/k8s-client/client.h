@@ -18,9 +18,9 @@ using namespace rapidjson;
 typedef std::function<void(int watchType, rapidjson::Document* d)> WatchCallbackFn;
 typedef std::function<void(int watchType, const v1alpha1::Resource*)> CallbackFn;
 
-class Watcher{
+class K8SClient{
 public:
-	Watcher(WatchCallbackFn callbackFn): callbackFn(callbackFn) {}
+	K8SClient(WatchCallbackFn callbackFn): callbackFn(callbackFn) {}
     
     void Watch(){
         WatchCallbackFn cbFn = callbackFn; 

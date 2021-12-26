@@ -13,7 +13,7 @@
 #include "rapidjson/stringbuffer.h"
 #include <iostream>
 
-#include "k8s-client/watcher.h"
+#include "k8s-client/client.h"
 #include "../go/go.h"
 
 using namespace rapidjson;
@@ -29,8 +29,8 @@ void cbFn(int watchType, rapidjson::Document* d)
 
 int main()
 {
-	Watcher watcher = Watcher(cbFn);
-	watcher.Watch();
+	K8SClient k8sclient = K8SClient(cbFn);
+	k8sclient.Watch();
 	while(1){};
 	return 0;
 }

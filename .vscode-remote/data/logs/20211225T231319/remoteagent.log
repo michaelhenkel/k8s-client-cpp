@@ -39,3 +39,25 @@
 [2021-12-26 03:17:16.091] [remoteagent] [info] [::ffff:172.17.0.1][ea1b2eca][ManagementConnection] New connection established.
 [2021-12-26 03:17:16.138] [remoteagent] [info] [::ffff:172.17.0.1][ece18cb1][ExtensionHostConnection] New connection established.
 [2021-12-26 03:17:16.145] [remoteagent] [info] [::ffff:172.17.0.1][ece18cb1][ExtensionHostConnection] <4534> Launched Extension Host Process.
+[2021-12-26 03:34:23.322] [remoteagent] [info] Installing extension: golang.go
+[2021-12-26 03:34:25.173] [remoteagent] [info] Extensions is already requested to install golang.go
+[2021-12-26 03:34:26.648] [remoteagent] [info] Downloaded extension: golang.go /home/workspace/.vscode-remote/data/CachedExtensionVSIXs/golang.go-0.30.0
+[2021-12-26 03:34:27.280] [remoteagent] [info] Extracted extension to /home/workspace/.vscode-remote/extensions/.60433aef-9e0e-425f-ad19-6a87f3e96d16: golang.go
+[2021-12-26 03:34:27.308] [remoteagent] [info] Renamed to /home/workspace/.vscode-remote/extensions/golang.go-0.30.0
+[2021-12-26 03:34:27.318] [remoteagent] [info] Extracting completed. golang.go
+[2021-12-26 03:34:27.321] [remoteagent] [info] Extension installed successfully: golang.go
+[2021-12-26 03:38:25.871] [remoteagent] [info] [::ffff:172.17.0.1][ea1b2eca][ManagementConnection] The client has disconnected gracefully, so the connection will be disposed.
+[2021-12-26 03:38:25.932] [remoteagent] [info] [::ffff:172.17.0.1][ece18cb1][ExtensionHostConnection] <4534> Extension Host Process exited with code: 0, signal: null.
+[2021-12-26 03:38:27.223] [remoteagent] [info] [::ffff:172.17.0.1][aa35d78b][ManagementConnection] New connection established.
+[2021-12-26 03:38:27.227] [remoteagent] [info] [::ffff:172.17.0.1][e01215c8][ExtensionHostConnection] New connection established.
+[2021-12-26 03:38:27.239] [remoteagent] [info] [::ffff:172.17.0.1][e01215c8][ExtensionHostConnection] <5709> Launched Extension Host Process.
+[2021-12-26 03:39:20.902] [remoteagent] [info] [::ffff:172.17.0.1][aa35d78b][ManagementConnection] The client has disconnected gracefully, so the connection will be disposed.
+[2021-12-26 03:39:20.953] [remoteagent] [info] [::ffff:172.17.0.1][e01215c8][ExtensionHostConnection] <5709> Extension Host Process exited with code: 0, signal: null.
+[2021-12-26 03:39:21.487] [remoteagent] [info] [::ffff:172.17.0.1][b3ec92b8][ManagementConnection] New connection established.
+[2021-12-26 03:39:21.499] [remoteagent] [info] [::ffff:172.17.0.1][302a5fed][ExtensionHostConnection] New connection established.
+[2021-12-26 03:39:21.510] [remoteagent] [info] [::ffff:172.17.0.1][302a5fed][ExtensionHostConnection] <5815> Launched Extension Host Process.
+[2021-12-26 03:39:52.911] [remoteagent] [info] [::ffff:172.17.0.1][b3ec92b8][ManagementConnection] The client has disconnected gracefully, so the connection will be disposed.
+[2021-12-26 03:39:52.948] [remoteagent] [info] [::ffff:172.17.0.1][302a5fed][ExtensionHostConnection] <5815> Extension Host Process exited with code: 0, signal: null.
+[2021-12-26 03:39:53.624] [remoteagent] [info] [::ffff:172.17.0.1][2cf394b5][ManagementConnection] New connection established.
+[2021-12-26 03:39:53.708] [remoteagent] [info] [::ffff:172.17.0.1][b98822c9][ExtensionHostConnection] New connection established.
+[2021-12-26 03:39:53.718] [remoteagent] [info] [::ffff:172.17.0.1][b98822c9][ExtensionHostConnection] <5898> Launched Extension Host Process.

@@ -73,7 +73,7 @@ type WatchEventHandler interface {
 var watchMu sync.Mutex
 var watchMap = map[C.uintptr_t]chan struct{}{}
 
-func NewSharedInformerFactory(kubernetesClientSet *kubernetes.Clientset, contrailClientSet *contrailClient.Clientset, dynamicClientSet dynamic.Interface, callbackFn C.uintptr_t, callbackContext C.uintptr_t) (dynamicinformer.DynamicSharedInformerFactory, error) {
+func NewSharedInformerFactory(kubernetesClientSet *kubernetes.Clientset, contrailClientSet *contrailClient.Clientset, dynamicClientSet dynamic.Interface, callbackFn C.uintptr_t, callbackContext C.uintptr_t) ([]dynamicinformer.DynamicSharedInformerFactory, error) {
 	var gvrList []schema.GroupVersionResource
 	gvrList = append(gvrList, schema.GroupVersionResource{
 		Group:    "",
@@ -84,6 +84,7 @@ func NewSharedInformerFactory(kubernetesClientSet *kubernetes.Clientset, contrai
 	if err != nil {
 		return nil, err
 	}
+
 	for _, contrailResource := range contrailResources.APIResources {
 		resourceNameList := strings.Split(contrailResource.Name, "/status")
 		gvrList = append(gvrList, schema.GroupVersionResource{
@@ -92,13 +93,14 @@ func NewSharedInformerFactory(kubernetesClientSet *kubernetes.Clientset, contrai
 			Resource: resourceNameList[0],
 		})
 	}
-	sif := dynamicinformer.NewDynamicSharedInformerFactory(dynamicClientSet, time.Minute*10)
+	var sifList []dynamicinformer.DynamicSharedInformerFactory
 	for _, gvr := range gvrList {
+		sif := dynamicinformer.NewDynamicSharedInformerFactory(dynamicClientSet, time.Minute*10)
 		dynamicInformer := sif.ForResource(gvr)
 		dynamicInformer.Informer().AddEventHandler(resourceEventHandler(&watchHandlerFunc{callbackFn, callbackContext}))
+		sifList = append(sifList, sif)
 	}
-
-	return sif, nil
+	return sifList, nil
 }
 
 func convert(obj interface{}) (*v1alpha1PB.Resource, error) {
@@ -205,11 +207,14 @@ func (h *watchHandlerFunc) HandleEvent(eventType int, res *v1alpha1PB.Resource) 
 func client_watch(callbackFn C.uintptr_t, callbackContext C.uintptr_t) *C.char {
 	contrailClientSet, kubernetesClientSet, dynamicClientSet, _ := getClientSets()
 	stopCh := make(chan struct{})
-	sif, _ := NewSharedInformerFactory(kubernetesClientSet, contrailClientSet, dynamicClientSet, callbackFn, callbackContext)
+	sifList, _ := NewSharedInformerFactory(kubernetesClientSet, contrailClientSet, dynamicClientSet, callbackFn, callbackContext)
 
-	sif.Start(stopCh)
-	sif.WaitForCacheSync(stopCh)
-
+	for _, sif := range sifList{
+		go func(){
+			sif.Start(stopCh)
+			sif.WaitForCacheSync(stopCh)
+		}()
+	}
 	watchMu.Lock()
 	defer watchMu.Unlock()
 	watchMap[callbackContext] = stopCh
