@@ -1,0 +1,41 @@
+[2021-12-25 23:13:19.079] [remoteagent] [info] Extension host agent started.
+[2021-12-25 23:18:01.954] [remoteagent] [info] [::ffff:172.17.0.1][54ff3516][ManagementConnection] New connection established.
+[2021-12-25 23:18:01.958] [remoteagent] [info] [::ffff:172.17.0.1][772c4dd7][ExtensionHostConnection] New connection established.
+[2021-12-25 23:18:01.963] [remoteagent] [info] [::ffff:172.17.0.1][772c4dd7][ExtensionHostConnection] <41> Launched Extension Host Process.
+[2021-12-25 23:18:24.966] [remoteagent] [info] [::ffff:172.17.0.1][54ff3516][ManagementConnection] The client has disconnected gracefully, so the connection will be disposed.
+[2021-12-25 23:18:24.984] [remoteagent] [info] [::ffff:172.17.0.1][772c4dd7][ExtensionHostConnection] <41> Extension Host Process exited with code: 0, signal: null.
+[2021-12-25 23:18:25.838] [remoteagent] [info] [::ffff:172.17.0.1][e65afba2][ManagementConnection] New connection established.
+[2021-12-25 23:18:25.860] [remoteagent] [info] [::ffff:172.17.0.1][03912d1a][ExtensionHostConnection] New connection established.
+[2021-12-25 23:18:25.865] [remoteagent] [info] [::ffff:172.17.0.1][03912d1a][ExtensionHostConnection] <54> Launched Extension Host Process.
+[2021-12-25 23:39:54.766] [remoteagent] [warning] No ptyHost heartbeat after 6 seconds
+[2021-12-25 23:39:55.817] [remoteagent] [info] [::ffff:172.17.0.1][e65afba2][ManagementConnection] The client has disconnected, will wait for reconnection 3h before disposing...
+[2021-12-25 23:45:09.114] [remoteagent] [info] [::ffff:172.17.0.1][e65afba2][ManagementConnection] Another client has connected, will shorten the wait for reconnection 5m before disposing...
+[2021-12-25 23:45:09.118] [remoteagent] [info] [::ffff:172.17.0.1][24dbcd8a][ManagementConnection] New connection established.
+[2021-12-25 23:45:09.141] [remoteagent] [info] [::ffff:172.17.0.1][a2c9e9fa][ExtensionHostConnection] New connection established.
+[2021-12-25 23:45:09.156] [remoteagent] [info] [::ffff:172.17.0.1][a2c9e9fa][ExtensionHostConnection] <1458> Launched Extension Host Process.
+[2021-12-25 23:50:09.258] [remoteagent] [info] [::ffff:172.17.0.1][e65afba2][ManagementConnection] The reconnection short grace time of 5m has expired, so the connection will be disposed.
+[2021-12-25 23:50:09.299] [remoteagent] [info] [::ffff:172.17.0.1][03912d1a][ExtensionHostConnection] <54> Extension Host Process exited with code: 0, signal: null.
+[2021-12-26 00:07:35.143] [remoteagent] [info] [::ffff:172.17.0.1][24dbcd8a][ManagementConnection] The client has disconnected, will wait for reconnection 3h before disposing...
+[2021-12-26 00:35:20.193] [remoteagent] [info] [::ffff:172.17.0.1][24dbcd8a][ManagementConnection] Another client has connected, will shorten the wait for reconnection 5m before disposing...
+[2021-12-26 00:35:20.196] [remoteagent] [info] [::ffff:172.17.0.1][24dbcd8a][ManagementConnection] The client has reconnected.
+[2021-12-26 00:35:20.231] [remoteagent] [info] [::ffff:172.17.0.1][a2c9e9fa][ExtensionHostConnection] The client has reconnected.
+[2021-12-26 00:46:52.186] [remoteagent] [info] [::ffff:172.17.0.1][24dbcd8a][ManagementConnection] The client has disconnected, will wait for reconnection 3h before disposing...
+[2021-12-26 01:07:37.448] [remoteagent] [warning] No ptyHost heartbeat after 6 seconds
+[2021-12-26 02:32:50.718] [remoteagent] [info] [::ffff:172.17.0.1][24dbcd8a][ManagementConnection] Another client has connected, will shorten the wait for reconnection 5m before disposing...
+[2021-12-26 02:32:50.722] [remoteagent] [info] [::ffff:172.17.0.1][a2c9e9fa][ExtensionHostConnection] The client has reconnected.
+[2021-12-26 02:32:50.724] [remoteagent] [info] [::ffff:172.17.0.1][24dbcd8a][ManagementConnection] The client has reconnected.
+[2021-12-26 03:09:31.007] [remoteagent] [info] [::ffff:172.17.0.1][24dbcd8a][ManagementConnection] The client has disconnected gracefully, so the connection will be disposed.
+[2021-12-26 03:09:31.081] [remoteagent] [info] [::ffff:172.17.0.1][a2c9e9fa][ExtensionHostConnection] <1458> Extension Host Process exited with code: 0, signal: null.
+[2021-12-26 03:09:31.681] [remoteagent] [info] [::ffff:172.17.0.1][ba33ba44][ManagementConnection] New connection established.
+[2021-12-26 03:09:32.168] [remoteagent] [info] [::ffff:172.17.0.1][468ea821][ExtensionHostConnection] New connection established.
+[2021-12-26 03:09:32.151] [remoteagent] [info] [::ffff:172.17.0.1][468ea821][ExtensionHostConnection] <4000> Launched Extension Host Process.
+[2021-12-26 03:16:56.712] [remoteagent] [info] [::ffff:172.17.0.1][ba33ba44][ManagementConnection] The client has disconnected gracefully, so the connection will be disposed.
+[2021-12-26 03:16:56.747] [remoteagent] [info] [::ffff:172.17.0.1][468ea821][ExtensionHostConnection] <4000> Extension Host Process exited with code: 0, signal: null.
+[2021-12-26 03:16:57.483] [remoteagent] [info] [::ffff:172.17.0.1][469ccc89][ExtensionHostConnection] New connection established.
+[2021-12-26 03:16:57.489] [remoteagent] [info] [::ffff:172.17.0.1][ee35f54e][ManagementConnection] New connection established.
+[2021-12-26 03:16:57.500] [remoteagent] [info] [::ffff:172.17.0.1][469ccc89][ExtensionHostConnection] <4475> Launched Extension Host Process.
+[2021-12-26 03:17:15.319] [remoteagent] [info] [::ffff:172.17.0.1][ee35f54e][ManagementConnection] The client has disconnected gracefully, so the connection will be disposed.
+[2021-12-26 03:17:15.356] [remoteagent] [info] [::ffff:172.17.0.1][469ccc89][ExtensionHostConnection] <4475> Extension Host Process exited with code: 0, signal: null.
+[2021-12-26 03:17:16.091] [remoteagent] [info] [::ffff:172.17.0.1][ea1b2eca][ManagementConnection] New connection established.
+[2021-12-26 03:17:16.138] [remoteagent] [info] [::ffff:172.17.0.1][ece18cb1][ExtensionHostConnection] New connection established.
+[2021-12-26 03:17:16.145] [remoteagent] [info] [::ffff:172.17.0.1][ece18cb1][ExtensionHostConnection] <4534> Launched Extension Host Process.

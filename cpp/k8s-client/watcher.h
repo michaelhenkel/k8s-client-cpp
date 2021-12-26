@@ -6,9 +6,7 @@
 #include <memory>
 
 #include "pkg/apis/v1alpha1/apiresources.pb.h"
-#include "k8s.io/apimachinery/pkg/apis/meta/v1/generated.pb.h"
 #include "../go/go.h"
-#include "clientset.h"
 
 #include "rapidjson/document.h"
 #include "rapidjson/writer.h"
@@ -17,92 +15,42 @@
 
 using namespace rapidjson;
 
-namespace metav1 = k8s::io::apimachinery::pkg::apis::meta::v1;
 typedef std::function<void(int watchType, rapidjson::Document* d)> WatchCallbackFn;
+typedef std::function<void(int watchType, const v1alpha1::Resource*)> CallbackFn;
 
 class Watcher{
 public:
-	Watcher(ClientSet* clientSet, const char* kind): clientSet(clientSet), kind(kind) {}
+	Watcher(WatchCallbackFn callbackFn): callbackFn(callbackFn) {}
     
-    void Start(WatchCallbackFn callbackFn){
-        const char* k = kind;
-        WatchCallbackFn cbFn = callbackFn;
-        watch = clientSet->resource().Watch(metav1::ListOptions(), [k,cbFn](int watchType, const v1alpha1::Resource* resource){
+    void Watch(){
+        WatchCallbackFn cbFn = callbackFn; 
+        watch = watcher([cbFn](int watchType, const v1alpha1::Resource* resource){		
             Document d;
-	        d.Parse(resource->resource().c_str());
-            Value key;
-	        key.SetString(StringRef(k));  
-	        d.AddMember("kind", key, d.GetAllocator());
+       	    d.Parse(resource->resource().c_str());
             cbFn(watchType, &d);
-        }, kind, "");
-    };
-    void Status(){
-        if (watch){
-            printf("watch is running\n");
-        } else {
-            printf("watch is not running\n");
-        }
-    };
-    void Stop(){
-        if (watch){
-            printf("stopping watch\n");
-            clientSet->resource().StopWatch(watch);
-        } else {
-            printf("cannot stop, watch not found\n");
-        }
+		
+        });           
     };
 private:
-    ClientSet* clientSet;
-    const char* kind;
 	uintptr_t watch;
-};
-
-class WatchManager {
-public:
-	WatchManager() {
-        watchMap.clear();
+	WatchCallbackFn callbackFn;
+    static void WatchCallback(uintptr_t callbackContext, int watchType, void* objBytes, int objSize) {
+	    v1alpha1::Resource obj;
+	    obj.ParseFromArray(objBytes, objSize);
+	    (*(CallbackFn*)callbackContext)(watchType, &obj);
     }
-	void Add(const char* kind, ClientSet* clientSet){
-        printf("add watcher for kind %s\n", kind);
-		watchit = watchMap.find(kind);
-		if (watchit == watchMap.end())
-		{
-            Watcher* watcher = new Watcher(clientSet, kind);
-            watchMap.insert(std::pair<const char*, Watcher*>(kind, watcher));
-		}		
-
-	};
-    //typedef std::function<void(int watchType, rapidjson::Document d)> WatchCallbackFn;
-    void Start(const char* kind, WatchCallbackFn callbackFn){
-        printf("searching for kind %s\n", kind);
-        watchit = watchMap.find(kind);
-		if (watchit != watchMap.end())
-		{  
-            printf("%s found\n", kind);
-            watchit->second->Start(callbackFn);
-        } else {
-            printf("%s not found\n", kind);
-        }
-    };
-    void Stop(const char* kind){
-        printf("calling stop\n");
-        watchit = watchMap.find(kind);
-		if (watchit != watchMap.end())
-		{  
-            watchit->second->Stop();
-        }
-    };
-    void Status(const char* kind){
-        watchit = watchMap.find(kind);
-		if (watchit != watchMap.end())
-		{  
-            watchit->second->Status();
-        }
-    };
-private:
-	std::map<const char*, Watcher*> watchMap;
-	std::map<const char*, Watcher*>::iterator watchit;
-	const char* kind;
+    uintptr_t watcher(CallbackFn callback) {
+	    CallbackFn *callbackP = new CallbackFn(callback);	
+	    auto callbackFn = uintptr_t(WatchCallback);
+	    auto callbackContext = uintptr_t(callbackP);
+	    auto err = client_watch(callbackFn, callbackContext);
+	    if (err != NULL) {
+		    auto errStr = std::string(err);
+		    free(err);
+		    throw errStr;
+	    }
+	    return callbackContext;
+    };    
 };
 
 #endif // WATCHER_H_
