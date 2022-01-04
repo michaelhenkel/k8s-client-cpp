@@ -1,6 +1,6 @@
 
 
-#include "pkg/apis/v1alpha1/apiresources.pb.h"
+//#include "pkg/apis/v1alpha1/apiresources.pb.h"
 
 
 #include <string>
@@ -13,8 +13,10 @@
 #include "rapidjson/stringbuffer.h"
 #include <iostream>
 
-#include "k8s-client/client.h"
-#include "../go/go.h"
+#include <k8sclient/k8sclient.h>
+
+//#include "k8s-client/k8sclient.h"
+//#include "../go/go.h"
 
 using namespace rapidjson;
 

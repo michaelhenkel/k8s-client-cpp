@@ -8,5 +8,8 @@ cpp/*.o
 cpp/k8s.io/
 cpp/k8s-cpp-client
 cpp/kubecfg-admin.conf
+k8s-cpp-client
+cpp/k8s-cpp-client/*.a
+cpp/k8s-cpp-client/*.o
 
 .vscode-remote/
